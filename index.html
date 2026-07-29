@@ -95,6 +95,10 @@
   .legend span { display:flex; align-items:center; gap:5px; }
   .sw { width:10px; height:10px; border-radius:3px; }
 
+  .quote { background:linear-gradient(135deg,#eef2ff,#f5f3ff); border-radius:14px; padding:14px 18px; margin-bottom:14px; }
+  .quote .qtext { font-size:13.5px; font-weight:600; color:#4338ca; line-height:1.5; font-style:italic; }
+  .quote .qtext:before { content:"\201C"; } .quote .qtext:after { content:"\201D"; }
+
   .goal { background:linear-gradient(135deg,#0f172a,#1e293b); color:#fff; border-radius:16px; padding:14px 18px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
   .goal .gl { font-size:10.5px; letter-spacing:.6px; text-transform:uppercase; color:#94a3b8; font-weight:700; }
   .goal .gt { font-size:15px; font-weight:700; margin-top:3px; }
@@ -115,6 +119,10 @@
 <body>
 <div class="wrap">
   <div id="banner" class="banner info hide"></div>
+
+  <div class="quote" id="quoteBox">
+    <div class="qtext" id="quoteText"></div>
+  </div>
 
   <div class="goal" id="goalBox">
     <div style="min-width:0">
@@ -271,6 +279,49 @@
   };
   var DOW = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   var MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  var QUOTES = [
+    "Discipline is choosing between what you want now and what you want most.",
+    "Small daily improvements are the key to staggering long-term results.",
+    "You don't have to be great to start, but you have to start to be great.",
+    "Motivation gets you going, but discipline keeps you growing.",
+    "The days are long, but the years are short. Show up for this one.",
+    "What you do today can improve all your tomorrows.",
+    "Progress, not perfection.",
+    "The pain of discipline weighs ounces; the pain of regret weighs tons.",
+    "Consistency is what transforms average into excellence.",
+    "A little progress each day adds up to big results.",
+    "Do something today that your future self will thank you for.",
+    "You are one focused day away from real momentum.",
+    "Success is the sum of small efforts repeated day in and day out.",
+    "Don't count the days, make the days count.",
+    "The secret of getting ahead is getting started.",
+    "Energy and persistence conquer all things.",
+    "Focus on being productive instead of busy.",
+    "Well done is better than well said.",
+    "Your only limit is the one you set today.",
+    "Every accomplishment starts with the decision to try.",
+    "Difficult roads often lead to beautiful destinations.",
+    "Push yourself, because no one else is going to do it for you.",
+    "Great things never came from comfort zones.",
+    "Dream it. Plan it. Do it.",
+    "The way to get started is to quit talking and begin doing.",
+    "It always seems impossible until it's done.",
+    "Believe you can and you're halfway there.",
+    "Act as if what you do makes a difference. It does.",
+    "Start where you are. Use what you have. Do what you can.",
+    "One day or day one — you decide.",
+    "Hard work beats talent when talent doesn't work hard.",
+    "The future depends on what you do today.",
+    "Winners are not people who never fail, but people who never quit.",
+    "Make today so awesome that yesterday gets jealous.",
+    "You didn't come this far to only come this far.",
+    "Slow progress is still progress.",
+    "Be stronger than your excuses.",
+    "Today's actions are tomorrow's results.",
+    "Show up. Do the work. Repeat.",
+    "The only bad workout is the one that didn't happen."
+  ];
 
   var SEED = [
     { text:"Gym",                                     priority:"high",   timeStart:"06:30", timeEnd:"07:45", pillar:"body" },
@@ -517,6 +568,12 @@
 
   function toMins(t){ if (!t) return -1; var a = t.split(":"); return (+a[0]) * 60 + (+a[1]); }
 
+  function renderQuote(){
+    var dk = todayKey(), sum = 0;
+    for (var i = 0; i < dk.length; i++) sum += dk.charCodeAt(i);
+    $("quoteText").textContent = QUOTES[sum % QUOTES.length];
+  }
+
   function renderGoal(){
     var g = data.goal;
     $("goalText").textContent = (g && g.text) ? g.text : "Set your 90-day goal";
@@ -751,9 +808,10 @@
   // ---- boot ----
   if (!load()) seedFirstRun();
   if (!storageOK) banner("This browser is blocking local storage, so nothing will save. Turn off Private Browsing.", "warn");
+  renderQuote();
   render();
-  setInterval(function(){ if (viewDate === todayKey()) render(); }, 60000);
-  document.addEventListener("visibilitychange", function(){ if (!document.hidden) render(); });
+  setInterval(function(){ renderQuote(); if (viewDate === todayKey()) render(); }, 60000);
+  document.addEventListener("visibilitychange", function(){ renderQuote(); if (!document.hidden) render(); });
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function(){
