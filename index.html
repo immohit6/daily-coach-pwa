@@ -95,9 +95,24 @@
   .legend span { display:flex; align-items:center; gap:5px; }
   .sw { width:10px; height:10px; border-radius:3px; }
 
-  .quote { background:linear-gradient(135deg,#eef2ff,#f5f3ff); border-radius:14px; padding:14px 18px; margin-bottom:14px; }
-  .quote .qtext { font-size:13.5px; font-weight:600; color:#4338ca; line-height:1.5; font-style:italic; }
-  .quote .qtext:before { content:"\201C"; } .quote .qtext:after { content:"\201D"; }
+  .quote { position:relative; overflow:hidden; background:linear-gradient(135deg,#6366f1,#8b5cf6 55%,#d946ef);
+    border-radius:16px; padding:16px 18px; margin-bottom:14px; box-shadow:0 4px 14px rgba(99,102,241,.28); }
+  .quote:before { content:"\201C"; position:absolute; top:-26px; right:2px; font-size:96px; font-weight:900;
+    color:rgba(255,255,255,.14); line-height:1; font-family:Georgia,serif; pointer-events:none; }
+  .quote-row { display:flex; align-items:flex-start; gap:12px; position:relative; }
+  .qmark { font-size:11px; letter-spacing:.6px; text-transform:uppercase; font-weight:800; color:rgba(255,255,255,.75);
+    margin-bottom:5px; display:flex; align-items:center; gap:5px; }
+  .qbody { flex:1; min-width:0; }
+  .qtext { font-size:14px; font-weight:600; color:#fff; line-height:1.55; font-style:italic; transition:opacity .18s ease, transform .18s ease; }
+  .qtext.swap { opacity:0; transform:translateY(3px); }
+  .qactions { display:flex; flex-direction:column; gap:6px; flex-shrink:0; }
+  .qbtn { border:none; background:rgba(255,255,255,.18); color:#fff; width:30px; height:30px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center; font-size:14px; line-height:1; transition:transform .15s ease, background .15s ease; }
+  .qbtn:active { transform:scale(.88); }
+  .qbtn.fav.on { background:#fff; color:#db2777; }
+  .qbtn.spin { animation:qspin .4s ease; }
+  @keyframes qspin { from { transform:rotate(0deg); } to { transform:rotate(180deg); } }
+  @media (prefers-reduced-motion:reduce) { .qbtn.spin { animation:none; } }
 
   .goal { background:linear-gradient(135deg,#0f172a,#1e293b); color:#fff; border-radius:16px; padding:14px 18px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
   .goal .gl { font-size:10.5px; letter-spacing:.6px; text-transform:uppercase; color:#94a3b8; font-weight:700; }
@@ -121,7 +136,16 @@
   <div id="banner" class="banner info hide"></div>
 
   <div class="quote" id="quoteBox">
-    <div class="qtext" id="quoteText"></div>
+    <div class="quote-row">
+      <div class="qbody">
+        <div class="qmark">&#10024; Today&#39;s spark</div>
+        <div class="qtext" id="quoteText"></div>
+      </div>
+      <div class="qactions">
+        <button class="qbtn" id="quoteShuffle" aria-label="Show another quote">&#8635;</button>
+        <button class="qbtn fav" id="quoteFav" aria-label="Save to favorites">&#9825;</button>
+      </div>
+    </div>
   </div>
 
   <div class="goal" id="goalBox">
@@ -365,7 +389,7 @@
   }
   function $(id){ return document.getElementById(id); }
 
-  var data = { days:{}, template:[], goal:null };
+  var data = { days:{}, template:[], goal:null, favorites:[] };
   var viewDate = todayKey();
   var editingId = null;
   var draft = { text:"", timeStart:"", timeEnd:"", priority:"medium", pillar:"none" };
@@ -376,7 +400,7 @@
       var raw = localStorage.getItem(KEY);
       if (raw) {
         var p = JSON.parse(raw);
-        data = { days: p.days || {}, template: p.template || [], goal: p.goal || null };
+        data = { days: p.days || {}, template: p.template || [], goal: p.goal || null, favorites: p.favorites || [] };
         return true;
       }
     } catch (e) { storageOK = false; }
@@ -568,11 +592,50 @@
 
   function toMins(t){ if (!t) return -1; var a = t.split(":"); return (+a[0]) * 60 + (+a[1]); }
 
-  function renderQuote(){
+  var quoteIndex = 0;
+  function todaysQuoteIndex(){
     var dk = todayKey(), sum = 0;
     for (var i = 0; i < dk.length; i++) sum += dk.charCodeAt(i);
-    $("quoteText").textContent = QUOTES[sum % QUOTES.length];
+    return sum % QUOTES.length;
   }
+  function paintFavBtn(){
+    var on = data.favorites.indexOf(QUOTES[quoteIndex]) >= 0;
+    var b = $("quoteFav");
+    b.className = "qbtn fav" + (on ? " on" : "");
+    b.innerHTML = on ? "&#9829;" : "&#9825;";
+    b.setAttribute("aria-label", on ? "Remove from favorites" : "Save to favorites");
+  }
+  function renderQuote(idx, animate){
+    if (idx === undefined) idx = todaysQuoteIndex();
+    quoteIndex = idx;
+    var el = $("quoteText");
+    if (animate) {
+      el.className = "qtext swap";
+      setTimeout(function(){
+        el.textContent = QUOTES[quoteIndex];
+        el.className = "qtext";
+        paintFavBtn();
+      }, 160);
+    } else {
+      el.textContent = QUOTES[quoteIndex];
+      paintFavBtn();
+    }
+  }
+  $("quoteShuffle").onclick = function(){
+    var next = quoteIndex;
+    if (QUOTES.length > 1) { while (next === quoteIndex) next = Math.floor(Math.random() * QUOTES.length); }
+    renderQuote(next, true);
+    this.className = "qbtn spin";
+    var btn = this;
+    setTimeout(function(){ btn.className = "qbtn"; }, 400);
+  };
+  $("quoteFav").onclick = function(){
+    var q = QUOTES[quoteIndex];
+    var i = data.favorites.indexOf(q);
+    if (i >= 0) { data.favorites.splice(i, 1); }
+    else { data.favorites.push(q); banner("Saved to favorites."); }
+    save(); paintFavBtn();
+  };
 
   function renderGoal(){
     var g = data.goal;
@@ -794,7 +857,7 @@
       try {
         var p = JSON.parse(r.result);
         if (!p || typeof p !== "object" || !p.days) throw new Error("bad file");
-        data = { days: p.days || {}, template: p.template || [], goal: p.goal || null };
+        data = { days: p.days || {}, template: p.template || [], goal: p.goal || null, favorites: p.favorites || [] };
         save(); render();
         banner("Backup restored.");
       } catch (err) {
