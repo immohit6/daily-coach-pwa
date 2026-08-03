@@ -132,6 +132,21 @@
   .msg.bot { background:#f1f5f9; color:var(--ink); margin-right:auto; border-bottom-left-radius:4px; }
   .msg.err { background:#fef2f2; color:#b91c1c; margin-right:auto; border-bottom-left-radius:4px; }
   .msg.pending { background:#f1f5f9; color:var(--faint); margin-right:auto; border-bottom-left-radius:4px; font-style:italic; }
+
+  .wheelcard { background:var(--card); border-radius:20px; padding:22px 18px 18px; box-shadow:0 1px 3px rgba(0,0,0,.06); text-align:center; }
+  .wheel-wrap { position:relative; width:180px; height:180px; margin:0 auto; }
+  .wheel-svg { width:100%; height:100%; transform:rotate(-90deg); }
+  .wheel-track { fill:none; stroke:var(--border); stroke-width:10; }
+  .wheel-fill { fill:none; stroke:#f97316; stroke-width:10; stroke-linecap:round; transition:stroke-dashoffset .6s ease, stroke .3s ease; }
+  .wheel-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .wheel-flame { font-size:28px; line-height:1; margin-bottom:2px; filter:grayscale(1); opacity:.35; transition:filter .3s ease, opacity .3s ease; }
+  .wheel-flame.on { filter:grayscale(0); opacity:1; }
+  .wheel-num { font-size:36px; font-weight:900; color:var(--ink); line-height:1; }
+  .wheel-lbl { font-size:11px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:.5px; margin-top:2px; }
+  .wheel-next { margin-top:12px; font-size:12.5px; color:var(--muted); font-weight:600; }
+  .wheelcard.pulse .wheel-wrap { animation:wheelPulse .6s ease; }
+  @keyframes wheelPulse { 0% { transform:scale(1); } 40% { transform:scale(1.08); } 100% { transform:scale(1); } }
+  @media (prefers-reduced-motion:reduce) { .wheelcard.pulse .wheel-wrap { animation:none; } }
   .hide { display:none !important; }
   @media (prefers-reduced-motion:reduce) { * { transition:none !important; } }
 </style>
@@ -160,6 +175,21 @@
       <div class="gd" id="goalDays"></div>
     </div>
     <button id="goalEdit">Edit</button>
+  </div>
+
+  <div class="wheelcard" id="wheelCard" style="margin-bottom:14px">
+    <div class="wheel-wrap">
+      <svg viewBox="0 0 120 120" class="wheel-svg">
+        <circle class="wheel-track" cx="60" cy="60" r="52" />
+        <circle class="wheel-fill" id="wheelFill" cx="60" cy="60" r="52" />
+      </svg>
+      <div class="wheel-center">
+        <div class="wheel-flame" id="wheelFlame">&#128293;</div>
+        <div class="wheel-num" id="wheelNum">0</div>
+        <div class="wheel-lbl">day streak</div>
+      </div>
+    </div>
+    <div class="wheel-next" id="wheelNext"></div>
   </div>
 
   <div class="card pad hide" id="goalEditor" style="margin-bottom:14px">
@@ -419,7 +449,7 @@
   }
   function $(id){ return document.getElementById(id); }
 
-  var data = { days:{}, template:[], goal:null, favorites:[] };
+  var data = { days:{}, template:[], goal:null, favorites:[], lastCelebratedStreak:0 };
   var viewDate = todayKey();
   var editingId = null;
   var draft = { text:"", timeStart:"", timeEnd:"", priority:"medium", pillar:"none" };
@@ -430,7 +460,7 @@
       var raw = localStorage.getItem(KEY);
       if (raw) {
         var p = JSON.parse(raw);
-        data = { days: p.days || {}, template: p.template || [], goal: p.goal || null, favorites: p.favorites || [] };
+        data = { days: p.days || {}, template: p.template || [], goal: p.goal || null, favorites: p.favorites || [], lastCelebratedStreak: p.lastCelebratedStreak || 0 };
         return true;
       }
     } catch (e) { storageOK = false; }
@@ -477,6 +507,48 @@
     return s;
   }
 
+  var STREAK_STOPS = [3,7,14,21,30,50,75,100,150,200,300,365];
+  function stopAt(idx){
+    return idx < STREAK_STOPS.length ? STREAK_STOPS[idx] : STREAK_STOPS[STREAK_STOPS.length - 1] + 100 * (idx - STREAK_STOPS.length + 1);
+  }
+  function milestoneRange(streak){
+    var i = 0, next = stopAt(0), prev = 0;
+    while (streak > next) { i++; prev = next; next = stopAt(i); }
+    return { prev: prev, next: next };
+  }
+  function isMilestone(streak){
+    return streak > 0 && milestoneRange(streak).next === streak;
+  }
+  function renderStreakWheel(){
+    var st = streakCount();
+    var r = 52, c = 2 * Math.PI * r;
+    var range = milestoneRange(st);
+    var frac = range.next > range.prev ? (st - range.prev) / (range.next - range.prev) : 0;
+    frac = Math.max(0, Math.min(1, frac));
+
+    var fill = $("wheelFill");
+    fill.setAttribute("stroke-dasharray", c);
+    fill.setAttribute("stroke-dashoffset", c * (1 - frac));
+    fill.style.stroke = st > 0 ? "#f97316" : "#cbd5e1";
+    $("wheelNum").textContent = st;
+    $("wheelFlame").className = "wheel-flame" + (st > 0 ? " on" : "");
+    var left = range.next - st;
+    $("wheelNext").textContent = st === 0
+      ? "Complete today to start your streak"
+      : left === 0
+        ? "🎉 " + st + "-day milestone reached!"
+        : left + " day" + (left === 1 ? "" : "s") + " to your " + range.next + "-day milestone";
+
+    if (isMilestone(st) && data.lastCelebratedStreak !== st) {
+      data.lastCelebratedStreak = st;
+      save();
+      banner("🎉 " + st + "-day streak! Keep it going.", "info");
+      var card = $("wheelCard");
+      card.className = "wheelcard pulse";
+      setTimeout(function(){ card.className = "wheelcard"; }, 650);
+    }
+  }
+
   function renderTaskRow(t, showTime, active){
     var pil = PILLARS[t.pillar] || PILLARS.none;
     var hasPil = t.pillar && t.pillar !== "none";
@@ -510,6 +582,7 @@
     var st = streakCount();
     $("streak").innerHTML = "&#128293; " + st;
     $("streak").className = st > 0 ? "streak on" : "streak";
+    renderStreakWheel();
 
     var done = tasks.filter(function(t){ return t.done; }).length;
     var pct = tasks.length ? Math.round(done / tasks.length * 100) : 0;
@@ -887,7 +960,7 @@
       try {
         var p = JSON.parse(r.result);
         if (!p || typeof p !== "object" || !p.days) throw new Error("bad file");
-        data = { days: p.days || {}, template: p.template || [], goal: p.goal || null, favorites: p.favorites || [] };
+        data = { days: p.days || {}, template: p.template || [], goal: p.goal || null, favorites: p.favorites || [], lastCelebratedStreak: p.lastCelebratedStreak || 0 };
         save(); render();
         banner("Backup restored.");
       } catch (err) {
