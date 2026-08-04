@@ -128,20 +128,32 @@
   .cyclehero .sub { font-size:12.5px; color:#cbd5e1; margin-top:5px; line-height:1.5; }
   .cyclehero .sub.hide { display:none; }
   .stripgrid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
-  .chip { border-radius:11px; padding:8px 3px 7px; text-align:center; background:var(--line); border:2px solid transparent; }
-  .chip .cd { font-size:9.5px; font-weight:800; color:var(--faint); letter-spacing:.3px; }
-  .chip .cw { font-size:10px; font-weight:700; color:var(--muted); margin-top:3px; line-height:1.25; min-height:24px;
+  .wdchip { border-radius:11px; padding:8px 3px 7px; text-align:center; background:var(--line); border:2px solid transparent; }
+  .wdchip .cd { font-size:9.5px; font-weight:800; color:var(--faint); letter-spacing:.3px; }
+  .wdchip .cw { font-size:10px; font-weight:700; color:var(--muted); margin-top:3px; line-height:1.25; min-height:24px;
     display:flex; align-items:center; justify-content:center; }
-  .chip.gym { background:#fff7ed; }
-  .chip.gym .cw { color:#c2410c; }
-  .chip.rest .cw { color:var(--faint); }
-  .chip.today { border-color:#f97316; }
-  .chip.today .cd { color:#f97316; }
+  .wdchip.gym { background:#fff7ed; }
+  .wdchip.gym .cw { color:#c2410c; }
+  .wdchip.rest .cw { color:var(--faint); }
+  .wdchip.today { border-color:#f97316; }
+  .wdchip.today .cd { color:#f97316; }
   .striphint { font-size:11px; color:var(--faint); margin-top:11px; text-align:center; }
   .editrow { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); }
   .editrow:last-child { border-bottom:none; }
   .editrow .dn { min-width:34px; height:20px; padding:0 6px; border-radius:6px; background:var(--line); color:var(--muted);
     font-size:10.5px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+  .timerwrap { position:relative; width:160px; height:160px; margin:4px auto 0; }
+  .timer-svg { width:100%; height:100%; transform:rotate(-90deg); }
+  .timer-track { fill:none; stroke:var(--border); stroke-width:10; }
+  .timer-fill { fill:none; stroke:var(--accent); stroke-width:10; stroke-linecap:round; transition:stroke-dashoffset 1s linear, stroke .3s ease; }
+  .timer-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .timer-time { font-size:32px; font-weight:900; color:var(--ink); line-height:1; font-variant-numeric:tabular-nums; }
+  .timer-label { font-size:11px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:.5px; margin-top:4px; }
+  .timerdone { animation:timerFlash .6s ease; }
+  @keyframes timerFlash { 0% { box-shadow:0 0 0 0 rgba(34,197,94,.45); } 100% { box-shadow:0 0 0 16px rgba(34,197,94,0); } }
+  @media (prefers-reduced-motion:reduce) { .timerdone { animation:none; } }
+
   .nowline { display:flex; align-items:center; gap:8px; padding:3px 14px 3px 8px; }
   .nowline .nt { font-size:9.5px; font-weight:800; color:#ef4444; letter-spacing:.6px; }
   .nowline .nl { flex:1; height:2px; background:#ef4444; border-radius:2px; opacity:.55; }
@@ -230,6 +242,25 @@
     <div style="display:flex;gap:8px">
       <button class="btn dark" id="cycleSave">Save cycle</button>
       <button class="btn" id="cycleCancel" style="flex:0;padding:10px 18px">Cancel</button>
+    </div>
+  </div>
+
+  <div class="card pad" id="timerCard" style="margin-bottom:14px">
+    <div class="sec" style="margin-bottom:12px">Rest timer</div>
+    <div class="timerwrap">
+      <svg viewBox="0 0 120 120" class="timer-svg">
+        <circle class="timer-track" cx="60" cy="60" r="52" />
+        <circle class="timer-fill" id="timerFill" cx="60" cy="60" r="52" />
+      </svg>
+      <div class="timer-center">
+        <div class="timer-time" id="timerTime">1:00</div>
+        <div class="timer-label" id="timerLabel">Rest timer</div>
+      </div>
+    </div>
+    <div class="chips" id="timerPresets" style="justify-content:center;margin:14px 0 12px"></div>
+    <div class="actions" style="margin:0">
+      <button class="btn primary" id="timerStart">Start</button>
+      <button class="btn" id="timerReset">Reset</button>
     </div>
   </div>
 
@@ -599,7 +630,7 @@
       var t = days[i] || "";
       var r = isRestDay(t);
       var label = r ? "Rest" : splitTitleSub(t).title;
-      html += '<div class="chip ' + (r ? "rest" : "gym") + (i === idx ? " today" : "") + '">' +
+      html += '<div class="wdchip ' + (r ? "rest" : "gym") + (i === idx ? " today" : "") + '">' +
         '<div class="cd">' + WEEKDAY_ABBR[i] + '</div><div class="cw">' + esc(label) + '</div></div>';
     }
     $("cycleStrip").innerHTML = html;
@@ -1024,6 +1055,99 @@
     };
     r.readAsText(f);
   };
+
+  // ---- rest timer ----
+  var TIMER_PRESETS = [30, 60, 90, 120];
+  var timerDuration = 60;
+  var timerRemaining = 60;
+  var timerRunning = false;
+  var timerInterval = null;
+
+  function fmtTime(s){
+    var m = Math.floor(s / 60), sec = s % 60;
+    return m + ":" + (sec < 10 ? "0" : "") + sec;
+  }
+  function paintTimerPresets(){
+    $("timerPresets").innerHTML = TIMER_PRESETS.map(function(s){
+      var on = s === timerDuration;
+      return '<button class="chip" data-s="' + s + '" style="' +
+        (on ? "border-color:var(--accent);color:var(--accent);background:#6366f118" : "") +
+        '">' + s + 's</button>';
+    }).join("");
+  }
+  function renderTimer(){
+    var r = 52, c = 2 * Math.PI * r;
+    var frac = timerDuration > 0 ? timerRemaining / timerDuration : 0;
+    frac = Math.max(0, Math.min(1, frac));
+    var fill = $("timerFill");
+    fill.setAttribute("stroke-dasharray", c);
+    fill.setAttribute("stroke-dashoffset", c * (1 - frac));
+    fill.style.stroke = (timerRunning && timerRemaining > 0 && timerRemaining <= 10) ? "#f59e0b" : "";
+    $("timerTime").textContent = fmtTime(timerRemaining);
+    $("timerLabel").textContent = timerRunning ? "Resting…" :
+      (timerRemaining === 0 ? "Time's up!" : (timerRemaining < timerDuration ? "Paused" : "Rest timer"));
+    $("timerStart").textContent = timerRunning ? "Pause" :
+      (timerRemaining > 0 && timerRemaining < timerDuration ? "Resume" : "Start");
+  }
+  function playRestBeep(){
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      var ctx = new Ctx();
+      [880, 1046].forEach(function(freq, i){
+        setTimeout(function(){
+          var o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = "sine"; o.frequency.value = freq;
+          g.gain.setValueAtTime(0.0001, ctx.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.45);
+          o.connect(g); g.connect(ctx.destination);
+          o.start(); o.stop(ctx.currentTime + 0.46);
+        }, i * 260);
+      });
+    } catch (e) {}
+  }
+  function stopTimerInterval(){
+    timerRunning = false;
+    clearInterval(timerInterval);
+  }
+  function tickTimer(){
+    timerRemaining--;
+    if (timerRemaining <= 0) {
+      timerRemaining = 0;
+      stopTimerInterval();
+      playRestBeep();
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      banner("⏱️ Rest over — let's go!");
+      var card = $("timerCard");
+      card.className = "card pad timerdone";
+      setTimeout(function(){ card.className = "card pad"; }, 650);
+    }
+    renderTimer();
+  }
+  function startPauseTimer(){
+    if (timerRunning) { stopTimerInterval(); renderTimer(); return; }
+    if (timerRemaining <= 0) timerRemaining = timerDuration;
+    timerRunning = true;
+    timerInterval = setInterval(tickTimer, 1000);
+    renderTimer();
+  }
+  function resetTimer(){
+    stopTimerInterval();
+    timerRemaining = timerDuration;
+    renderTimer();
+  }
+  $("timerPresets").onclick = function(e){
+    var b = e.target.closest("[data-s]"); if (!b) return;
+    stopTimerInterval();
+    timerDuration = +b.getAttribute("data-s");
+    timerRemaining = timerDuration;
+    paintTimerPresets();
+    renderTimer();
+  };
+  $("timerStart").onclick = startPauseTimer;
+  $("timerReset").onclick = resetTimer;
+  paintTimerPresets();
+  renderTimer();
 
   // ---- boot ----
   if (!load()) seedFirstRun();
