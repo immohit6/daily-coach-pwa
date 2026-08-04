@@ -119,6 +119,29 @@
   .goal .gt { font-size:15px; font-weight:700; margin-top:3px; }
   .goal .gd { font-size:11.5px; color:#a5b4fc; margin-top:3px; }
   .goal button { border:none; background:rgba(255,255,255,.14); color:#e2e8f0; border-radius:8px; padding:8px 11px; font-size:12px; font-weight:600; flex-shrink:0; }
+
+  .cyclehero { background:linear-gradient(135deg,#0f172a,#1e293b); color:#fff; border-radius:16px; padding:16px 18px; margin-bottom:10px; }
+  .cyclehero .top { display:flex; align-items:center; justify-content:space-between; margin-bottom:2px; }
+  .cyclehero .lbl { font-size:10.5px; letter-spacing:.6px; text-transform:uppercase; color:#94a3b8; font-weight:700; }
+  .cyclehero .daynum { font-size:10.5px; letter-spacing:.6px; text-transform:uppercase; color:#fdba74; font-weight:800; }
+  .cyclehero .title { font-size:19px; font-weight:800; margin-top:4px; }
+  .cyclehero .sub { font-size:12.5px; color:#cbd5e1; margin-top:5px; line-height:1.5; }
+  .cyclehero .sub.hide { display:none; }
+  .stripgrid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .chip { border-radius:11px; padding:8px 3px 7px; text-align:center; background:var(--line); border:2px solid transparent; }
+  .chip .cd { font-size:9.5px; font-weight:800; color:var(--faint); letter-spacing:.3px; }
+  .chip .cw { font-size:10px; font-weight:700; color:var(--muted); margin-top:3px; line-height:1.25; min-height:24px;
+    display:flex; align-items:center; justify-content:center; }
+  .chip.gym { background:#fff7ed; }
+  .chip.gym .cw { color:#c2410c; }
+  .chip.rest .cw { color:var(--faint); }
+  .chip.today { border-color:#f97316; }
+  .chip.today .cd { color:#f97316; }
+  .striphint { font-size:11px; color:var(--faint); margin-top:11px; text-align:center; }
+  .editrow { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); }
+  .editrow:last-child { border-bottom:none; }
+  .editrow .dn { width:20px; height:20px; border-radius:6px; background:var(--line); color:var(--muted);
+    font-size:10.5px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .nowline { display:flex; align-items:center; gap:8px; padding:3px 14px 3px 8px; }
   .nowline .nt { font-size:9.5px; font-weight:800; color:#ef4444; letter-spacing:.6px; }
   .nowline .nl { flex:1; height:2px; background:#ef4444; border-radius:2px; opacity:.55; }
@@ -184,6 +207,30 @@
       </div>
     </div>
     <div class="wheel-next" id="wheelNext"></div>
+  </div>
+
+  <div class="cyclehero" id="cycleHero">
+    <div class="top">
+      <div class="lbl">7-day gym cycle</div>
+      <div class="daynum" id="cycleDayNum">Day 1 of 7</div>
+    </div>
+    <div class="title" id="cycleTitle"></div>
+    <div class="sub" id="cycleSub"></div>
+  </div>
+
+  <div class="card pad" id="cycleStripCard" style="margin-bottom:14px">
+    <div class="stripgrid" id="cycleStrip"></div>
+    <div class="striphint">Cycles every 7 days on its own, independent of the calendar week.</div>
+    <button class="jump" id="cycleEditToggle" style="margin-top:10px">Edit cycle</button>
+  </div>
+
+  <div class="card pad hide" id="cycleEditor" style="margin-bottom:14px">
+    <div id="cycleEditRows"></div>
+    <div class="hint" style="margin:10px 0">Leave a day blank (or type &quot;rest&quot;) and it&#39;s styled as a rest day.</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn dark" id="cycleSave">Save cycle</button>
+      <button class="btn" id="cycleCancel" style="flex:0;padding:10px 18px">Cancel</button>
+    </div>
   </div>
 
   <div class="card pad hide" id="goalEditor" style="margin-bottom:14px">
@@ -381,6 +428,16 @@
     { text:"20-min walk",                             priority:"low",    timeStart:null,    timeEnd:null,    pillar:"body" }
   ];
 
+  var DEFAULT_CYCLE_DAYS = [
+    "Push — chest, shoulders, triceps",
+    "Pull — back, biceps",
+    "Legs — squats, RDLs, leg press, calves",
+    "Rest",
+    "Upper body",
+    "Lower body",
+    "Rest"
+  ];
+
   function pad(n){ return n < 10 ? "0" + n : "" + n; }
   function keyOf(d){ return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()); }
   function todayKey(){ return keyOf(new Date()); }
@@ -409,7 +466,8 @@
   }
   function $(id){ return document.getElementById(id); }
 
-  var data = { days:{}, template:[], goal:null, favorites:[], lastCelebratedStreak:0 };
+  var data = { days:{}, template:[], goal:null, favorites:[], lastCelebratedStreak:0,
+    gymCycle: { start: todayKey(), days: DEFAULT_CYCLE_DAYS.slice() } };
   var viewDate = todayKey();
   var editingId = null;
   var draft = { text:"", timeStart:"", timeEnd:"", priority:"medium", pillar:"none" };
@@ -420,7 +478,8 @@
       var raw = localStorage.getItem(KEY);
       if (raw) {
         var p = JSON.parse(raw);
-        data = { days: p.days || {}, template: p.template || [], goal: p.goal || null, favorites: p.favorites || [], lastCelebratedStreak: p.lastCelebratedStreak || 0 };
+        data = { days: p.days || {}, template: p.template || [], goal: p.goal || null, favorites: p.favorites || [], lastCelebratedStreak: p.lastCelebratedStreak || 0,
+          gymCycle: p.gymCycle || { start: todayKey(), days: DEFAULT_CYCLE_DAYS.slice() } };
         return true;
       }
     } catch (e) { storageOK = false; }
@@ -509,6 +568,54 @@
     }
   }
 
+  function cycleDayIndex(dk){
+    var diff = Math.round((dateOf(dk) - dateOf(data.gymCycle.start)) / 86400000);
+    return ((diff % 7) + 7) % 7;
+  }
+  function splitTitleSub(text){
+    var i = text.indexOf("—");
+    if (i === -1) return { title: text, sub: "" };
+    return { title: text.slice(0, i).trim(), sub: text.slice(i + 1).trim() };
+  }
+  function isRestDay(text){ return !text || /^rest$/i.test(text.trim()); }
+
+  function renderGymCycle(){
+    var idx = cycleDayIndex(viewDate);
+    var days = data.gymCycle.days;
+    var raw = days[idx] || "";
+    var rest = isRestDay(raw);
+
+    $("cycleDayNum").textContent = "Day " + (idx + 1) + " of 7";
+    if (rest) {
+      $("cycleTitle").textContent = "Rest day";
+      $("cycleSub").className = "sub hide";
+    } else {
+      var parts = splitTitleSub(raw);
+      $("cycleTitle").textContent = parts.title;
+      $("cycleSub").textContent = parts.sub;
+      $("cycleSub").className = parts.sub ? "sub" : "sub hide";
+    }
+
+    var html = "";
+    for (var i = 0; i < 7; i++) {
+      var t = days[i] || "";
+      var r = isRestDay(t);
+      var label = r ? "Rest" : splitTitleSub(t).title;
+      html += '<div class="chip ' + (r ? "rest" : "gym") + (i === idx ? " today" : "") + '">' +
+        '<div class="cd">' + (i + 1) + '</div><div class="cw">' + esc(label) + '</div></div>';
+    }
+    $("cycleStrip").innerHTML = html;
+  }
+  function openCycleEditor(){
+    var rows = "";
+    for (var i = 0; i < 7; i++) {
+      rows += '<div class="editrow"><div class="dn">' + (i + 1) + '</div>' +
+        '<input class="field" data-idx="' + i + '" value="' + esc(data.gymCycle.days[i] || "") + '" /></div>';
+    }
+    $("cycleEditRows").innerHTML = rows;
+    $("cycleEditor").className = "card pad";
+  }
+
   function renderTaskRow(t, showTime, active){
     var pil = PILLARS[t.pillar] || PILLARS.none;
     var hasPil = t.pillar && t.pillar !== "none";
@@ -543,6 +650,7 @@
     $("streak").innerHTML = "&#128293; " + st;
     $("streak").className = st > 0 ? "streak on" : "streak";
     renderStreakWheel();
+    renderGymCycle();
 
     var done = tasks.filter(function(t){ return t.done; }).length;
     var pct = tasks.length ? Math.round(done / tasks.length * 100) : 0;
@@ -864,6 +972,19 @@
     save(); $("goalEditor").className = "card pad hide"; render();
   };
 
+  $("cycleEditToggle").onclick = openCycleEditor;
+  $("cycleCancel").onclick = function(){ $("cycleEditor").className = "card pad hide"; };
+  $("cycleSave").onclick = function(){
+    var inputs = $("cycleEditRows").querySelectorAll("input");
+    var days = data.gymCycle.days.slice();
+    inputs.forEach(function(inp){ days[+inp.getAttribute("data-idx")] = inp.value.trim(); });
+    data.gymCycle.days = days;
+    save();
+    $("cycleEditor").className = "card pad hide";
+    render();
+    banner("Gym cycle updated.");
+  };
+
   function quickAdd(){
     var v = $("qaInput").value.trim();
     if (!v) return;
@@ -894,7 +1015,8 @@
       try {
         var p = JSON.parse(r.result);
         if (!p || typeof p !== "object" || !p.days) throw new Error("bad file");
-        data = { days: p.days || {}, template: p.template || [], goal: p.goal || null, favorites: p.favorites || [], lastCelebratedStreak: p.lastCelebratedStreak || 0 };
+        data = { days: p.days || {}, template: p.template || [], goal: p.goal || null, favorites: p.favorites || [], lastCelebratedStreak: p.lastCelebratedStreak || 0,
+          gymCycle: p.gymCycle || { start: todayKey(), days: DEFAULT_CYCLE_DAYS.slice() } };
         save(); render();
         banner("Backup restored.");
       } catch (err) {
