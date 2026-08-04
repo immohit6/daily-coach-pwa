@@ -262,6 +262,7 @@
       <button class="btn primary" id="timerStart">Start</button>
       <button class="btn" id="timerReset">Reset</button>
     </div>
+    <button class="jump" id="notifyToggle" style="display:block;margin:12px auto 0;text-align:center"></button>
   </div>
 
   <div class="card pad hide" id="goalEditor" style="margin-bottom:14px">
@@ -1110,6 +1111,29 @@
     timerRunning = false;
     clearInterval(timerInterval);
   }
+  function renderNotifyToggle(){
+    var btn = $("notifyToggle");
+    if (!("Notification" in window)) { btn.className = "hide"; return; }
+    btn.className = "jump";
+    if (Notification.permission === "granted") btn.textContent = "🔔 Notifications on";
+    else if (Notification.permission === "denied") btn.textContent = "🔕 Notifications blocked — check browser settings";
+    else btn.textContent = "🔔 Enable notifications";
+  }
+  function fireRestNotification(){
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    var title = "⏱️ Rest over — let's go!";
+    var opts = { body: "Time for your next set.", icon: "icon-192.png", badge: "icon-192.png", tag: "daily-coach-rest" };
+    try {
+      if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+        navigator.serviceWorker.ready.then(function(reg){
+          if (reg && reg.showNotification) reg.showNotification(title, opts);
+          else new Notification(title, opts);
+        }).catch(function(){ try { new Notification(title, opts); } catch (e) {} });
+      } else {
+        new Notification(title, opts);
+      }
+    } catch (e) {}
+  }
   function tickTimer(){
     timerRemaining--;
     if (timerRemaining <= 0) {
@@ -1118,6 +1142,7 @@
       playRestBeep();
       if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
       banner("⏱️ Rest over — let's go!");
+      fireRestNotification();
       var card = $("timerCard");
       card.className = "card pad timerdone";
       setTimeout(function(){ card.className = "card pad"; }, 650);
@@ -1146,8 +1171,13 @@
   };
   $("timerStart").onclick = startPauseTimer;
   $("timerReset").onclick = resetTimer;
+  $("notifyToggle").onclick = function(){
+    if (!("Notification" in window) || Notification.permission !== "default") return;
+    Notification.requestPermission().then(renderNotifyToggle);
+  };
   paintTimerPresets();
   renderTimer();
+  renderNotifyToggle();
 
   // ---- boot ----
   if (!load()) seedFirstRun();
