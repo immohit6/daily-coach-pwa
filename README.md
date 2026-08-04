@@ -1,19 +1,22 @@
 # Daily Coach — install on your iPhone
 
-Two self-contained web apps living in one folder: **Daily Coach** (daily plan,
-goal, streak) and **Gym Coach** (7-day gym cycle, rest timer, workout log).
-No build step, no server code, no dependencies.
+Three self-contained web apps living in one folder: **Daily Coach** (daily
+plan, goal, streak), **Gym Coach** (7-day gym cycle, rest timer, workout log),
+and **Hydration Coach** (water intake, target ring, streak). No build step,
+no server code, no dependencies.
 
 ## Files
 - `index.html` — Daily Coach
 - `manifest.webmanifest` / `icon-*.png` — Daily Coach install assets
 - `gym.html` — Gym Coach
 - `gym-manifest.webmanifest` / `gym-icon-*.png` — Gym Coach install assets
-- `sw.js` — shared service worker, gives both apps offline access
+- `hydration.html` — Hydration Coach
+- `hydro-manifest.webmanifest` / `hydro-icon-*.png` — Hydration Coach install assets
+- `sw.js` — shared service worker, gives all three apps offline access
 
-Keep all files in the **same folder**. Don't rename anything. The two apps link
-to each other from their header, and each installs to your home screen as its
-own separate icon.
+Keep all files in the **same folder**. Don't rename anything. The three apps
+link to each other from their header, and each installs to your home screen
+as its own separate icon.
 
 ---
 
@@ -44,9 +47,10 @@ no account needed to start.
 
 You now have an app icon. It opens full-screen with no browser bar and works offline.
 
-To also install **Gym Coach** as its own separate icon, open
-`https://YOURNAME.github.io/daily-coach/gym.html` in Safari and repeat the same
-three steps. It gets its own home screen icon, distinct from Daily Coach's.
+To also install **Gym Coach** or **Hydration Coach** as their own separate
+icons, open `https://YOURNAME.github.io/daily-coach/gym.html` or
+`.../hydration.html` in Safari and repeat the same three steps. Each gets its
+own home screen icon, distinct from the others.
 
 ## Step 3 — First run
 

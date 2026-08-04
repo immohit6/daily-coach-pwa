@@ -1,7 +1,8 @@
-var CACHE = "daily-coach-v2";
+var CACHE = "daily-coach-v3";
 var ASSETS = [
   "./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png",
-  "./gym.html", "./gym-manifest.webmanifest", "./gym-icon-192.png", "./gym-icon-512.png"
+  "./gym.html", "./gym-manifest.webmanifest", "./gym-icon-192.png", "./gym-icon-512.png",
+  "./hydration.html", "./hydro-manifest.webmanifest", "./hydro-icon-192.png", "./hydro-icon-512.png"
 ];
 
 self.addEventListener("install", function (e) {

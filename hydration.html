@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0f172a" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Hydration Coach" />
+<link rel="manifest" href="hydro-manifest.webmanifest" />
+<link rel="apple-touch-icon" href="hydro-icon-180.png" />
+<title>Hydration Coach</title>
+<style>
+  :root {
+    --bg:#f8fafc; --card:#ffffff; --ink:#0f172a; --muted:#64748b; --faint:#94a3b8;
+    --line:#f1f5f9; --border:#e2e8f0; --accent:#0ea5e9; --good:#22c55e;
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; padding:0; background:var(--bg); }
+  body {
+    font-family:-apple-system,BlinkMacSystemFont,'Inter',system-ui,sans-serif;
+    color:var(--ink);
+    padding:max(env(safe-area-inset-top),16px) 16px calc(env(safe-area-inset-bottom) + 32px);
+  }
+  .wrap { max-width:640px; margin:0 auto; }
+  button { font-family:inherit; cursor:pointer; }
+  input, select { font-family:inherit; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+  .banner { padding:10px 14px; border-radius:10px; margin-bottom:14px; font-size:13px; font-weight:600; }
+  .banner.info { background:#eff6ff; color:#1e40af; }
+  .banner.warn { background:#fef2f2; color:#b91c1c; }
+
+  .hublinks { display:flex; justify-content:flex-end; gap:8px; margin-bottom:10px; }
+  .backlink { border:none; background:var(--card); border-radius:8px; padding:8px 11px;
+    box-shadow:0 1px 2px rgba(0,0,0,.06); color:#475569; font-size:12px; font-weight:700; text-decoration:none; }
+
+  .apptitle { font-size:19px; font-weight:800; display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+
+  .nav { display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:10px; }
+  .navbtn { border:none; background:var(--card); border-radius:8px; padding:8px 10px; box-shadow:0 1px 2px rgba(0,0,0,.06); color:#475569; font-size:15px; line-height:1; }
+  .dateblk { min-width:170px; text-align:center; }
+  .dateblk .d { font-size:16px; font-weight:700; }
+  .jump { border:none; background:none; color:var(--accent); font-size:12px; font-weight:600; padding:0; }
+  .streakrow { display:flex; justify-content:center; margin-bottom:18px; }
+  .streak { display:flex; align-items:center; gap:5px; padding:6px 12px; border-radius:999px; font-size:13px; font-weight:700; background:#f1f5f9; color:var(--faint); }
+  .streak.on { background:#fff7ed; color:#c2410c; }
+
+  .card { background:var(--card); border-radius:16px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+  .pad { padding:18px 20px; }
+  .sec { font-size:12px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; padding-left:4px; }
+  .hint { font-size:11.5px; color:var(--faint); margin-top:8px; }
+  .field { width:100%; border:1px solid var(--border); border-radius:9px; padding:10px 11px; font-size:16px; color:var(--ink); background:#fff; outline:none; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chip { border:1.5px solid var(--border); background:#fff; color:var(--muted); border-radius:999px; padding:7px 13px; font-size:12px; font-weight:700; }
+  .btn { flex:1; display:flex; align-items:center; justify-content:center; gap:6px;
+    border:1px solid var(--border); background:var(--card); color:#475569;
+    border-radius:10px; padding:10px 8px; font-size:12.5px; font-weight:600; }
+  .btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .btn.dark { background:var(--ink); border-color:var(--ink); color:#fff; }
+  .hide { display:none !important; }
+  @media (prefers-reduced-motion:reduce) { * { transition:none !important; } }
+
+  /* ---- intake ring ---- */
+  .ringcard { background:var(--card); border-radius:20px; padding:22px 18px 18px; box-shadow:0 1px 3px rgba(0,0,0,.06); text-align:center; margin-bottom:14px; }
+  .ringwrap { position:relative; width:190px; height:190px; margin:0 auto; }
+  .ring-svg { width:100%; height:100%; transform:rotate(-90deg); }
+  .ring-track { fill:none; stroke:var(--border); stroke-width:12; }
+  .ring-fill { fill:none; stroke:var(--accent); stroke-width:12; stroke-linecap:round; transition:stroke-dashoffset .5s ease, stroke .3s ease; }
+  .ring-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .ring-amt { font-size:34px; font-weight:900; color:var(--ink); line-height:1; font-variant-numeric:tabular-nums; }
+  .ring-target { font-size:12.5px; font-weight:700; color:var(--faint); margin-top:4px; }
+  .ring-note { margin-top:12px; font-size:12.5px; color:var(--muted); font-weight:600; }
+  .ring-note.met { color:#16a34a; }
+  .edittarget { border:none; background:none; color:var(--accent); font-size:12px; font-weight:600; padding:0; margin-top:8px; display:inline-block; }
+
+  /* ---- entries ---- */
+  .entrychips { display:flex; flex-wrap:wrap; gap:6px; }
+  .entrychip { display:inline-flex; align-items:center; gap:7px; background:var(--line); border-radius:999px; padding:6px 6px 6px 13px; font-size:12.5px; font-weight:700; color:var(--ink); }
+  .entrychip .t { font-weight:600; color:var(--faint); font-size:11px; }
+  .entrychip button { border:none; background:rgba(15,23,42,.08); color:var(--muted); width:18px; height:18px; border-radius:999px; font-size:10px; display:flex; align-items:center; justify-content:center; padding:0; }
+  .customrow { display:flex; gap:8px; margin-top:12px; }
+  .customrow input { flex:1; }
+
+  /* ---- trend ---- */
+  .trendrow { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .trendrow:last-child { margin-bottom:0; }
+  .trendday { width:38px; font-size:11.5px; font-weight:700; color:var(--muted); flex-shrink:0; }
+  .trendtrack { flex:1; height:10px; background:var(--line); border-radius:999px; overflow:hidden; }
+  .trendfill { height:100%; border-radius:999px; background:var(--accent); }
+  .trendfill.met { background:var(--good); }
+  .trendamt { width:64px; text-align:right; font-size:11px; font-weight:700; color:var(--muted); flex-shrink:0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="banner" class="banner info hide"></div>
+
+  <div class="hublinks">
+    <a class="backlink" href="index.html">Daily Coach</a>
+    <a class="backlink" href="gym.html">🏋️ Gym Coach</a>
+  </div>
+
+  <div class="apptitle">💧 Hydration Coach</div>
+
+  <div class="nav">
+    <button class="navbtn" id="prev" aria-label="Previous day">&#10094;</button>
+    <div class="dateblk">
+      <div class="d" id="dateLabel"></div>
+      <button class="jump hide" id="jumpToday">Jump to today</button>
+    </div>
+    <button class="navbtn" id="next" aria-label="Next day">&#10095;</button>
+  </div>
+  <div class="streakrow">
+    <div class="streak" id="streak">&#128293; 0</div>
+  </div>
+
+  <div class="ringcard" id="ringCard">
+    <div class="ringwrap">
+      <svg viewBox="0 0 120 120" class="ring-svg">
+        <circle class="ring-track" cx="60" cy="60" r="52" />
+        <circle class="ring-fill" id="ringFill" cx="60" cy="60" r="52" />
+      </svg>
+      <div class="ring-center">
+        <div class="ring-amt" id="ringAmt">0</div>
+        <div class="ring-target" id="ringTarget">of 2500 ml</div>
+      </div>
+    </div>
+    <div class="ring-note" id="ringNote"></div>
+    <button class="edittarget" id="editTargetBtn">Edit target</button>
+    <div class="hide" id="targetForm" style="margin-top:10px">
+      <div style="display:flex;gap:8px;max-width:260px;margin:0 auto">
+        <input class="field" id="targetInput" type="number" inputmode="numeric" placeholder="ml" />
+        <button class="btn dark" id="targetSave" style="flex:0;padding:10px 16px">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:20px">
+    <div class="sec">Log water</div>
+    <div class="card pad">
+      <div class="chips" id="quickAdd"></div>
+      <div class="customrow">
+        <input class="field" id="customAmt" type="number" inputmode="numeric" placeholder="Custom amount (ml)" />
+        <button class="btn primary" id="customAddBtn" style="flex:0;padding:10px 16px">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:20px" id="entriesWrap">
+    <div class="sec">Today&#39;s log</div>
+    <div class="card pad">
+      <div class="hint hide" id="entriesEmpty" style="margin-top:0">Nothing logged for this day yet.</div>
+      <div class="entrychips" id="entryList"></div>
+    </div>
+  </div>
+
+  <div style="margin-top:20px">
+    <div class="sec">Last 7 days</div>
+    <div class="card pad" id="trendCard"></div>
+  </div>
+
+  <div style="margin-top:20px">
+    <div class="sec">Backup</div>
+    <div class="card pad">
+      <div class="chips" style="margin-bottom:0">
+        <button class="btn" id="exportBtn" style="flex:1">Export backup</button>
+        <button class="btn" id="importBtn" style="flex:1">Import backup</button>
+      </div>
+      <input type="file" id="importFile" accept="application/json,.json" class="hide" />
+      <div class="hint">This data lives only on this device and is separate from Daily Coach and Gym Coach.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var KEY = "hydration-coach-data";
+  var DOW = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  var DOW_SHORT = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  var MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var QUICK_AMOUNTS = [100, 250, 500, 1000];
+  var DEFAULT_TARGET = 2500;
+
+  function pad(n){ return n < 10 ? "0" + n : "" + n; }
+  function keyOf(d){ return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()); }
+  function todayKey(){ return keyOf(new Date()); }
+  function shiftDate(dk, delta){
+    var p = dk.split("-");
+    var d = new Date(+p[0], +p[1]-1, +p[2]);
+    d.setDate(d.getDate() + delta);
+    return keyOf(d);
+  }
+  function dateOf(dk){ var p = dk.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
+  function pretty(dk){ var d = dateOf(dk); return DOW[d.getDay()] + ", " + MON[d.getMonth()] + " " + d.getDate(); }
+  function nowTimeStr(){
+    var d = new Date();
+    var h = d.getHours(), m = d.getMinutes();
+    var per = h >= 12 ? "PM" : "AM", h12 = (h % 12) === 0 ? 12 : h % 12;
+    return h12 + ":" + pad(m) + " " + per;
+  }
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
+  function $(id){ return document.getElementById(id); }
+  function slugId(){ return "w-" + Math.random().toString(36).slice(2,8); }
+
+  var data = { logs: {}, target: DEFAULT_TARGET };
+  var viewDate = todayKey();
+  var storageOK = true;
+
+  function load(){
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var p = JSON.parse(raw);
+        data = { logs: p.logs || {}, target: p.target || DEFAULT_TARGET };
+        return true;
+      }
+    } catch (e) { storageOK = false; }
+    return false;
+  }
+  function save(){
+    try { localStorage.setItem(KEY, JSON.stringify(data)); }
+    catch (e) { storageOK = false; banner("Storage is full or blocked. Changes won't survive a reload.", "warn"); }
+  }
+  var bannerTimer = null;
+  function banner(msg, kind){
+    var el = $("banner");
+    el.textContent = msg;
+    el.className = "banner " + (kind || "info");
+    clearTimeout(bannerTimer);
+    if (kind !== "warn") bannerTimer = setTimeout(function(){ el.className = "banner info hide"; }, 3000);
+  }
+
+  function totalFor(dk){
+    var entries = data.logs[dk];
+    if (!entries || !entries.length) return 0;
+    var sum = 0;
+    entries.forEach(function(e){ sum += e.amount; });
+    return sum;
+  }
+  function streakCount(){
+    var s = 0, dk = todayKey();
+    var met = totalFor(dk) >= data.target && data.target > 0;
+    if (!met) dk = shiftDate(dk, -1);
+    while (true) {
+      var entries = data.logs[dk];
+      if (!entries || !entries.length) break;
+      if (totalFor(dk) < data.target) break;
+      s++; dk = shiftDate(dk, -1);
+    }
+    return s;
+  }
+
+  function render(){
+    $("dateLabel").textContent = pretty(viewDate);
+    $("jumpToday").className = viewDate === todayKey() ? "jump hide" : "jump";
+
+    var st = streakCount();
+    $("streak").innerHTML = "&#128293; " + st;
+    $("streak").className = st > 0 ? "streak on" : "streak";
+
+    renderRing();
+    renderQuickAdd();
+    renderEntries();
+    renderTrend();
+  }
+
+  function renderRing(){
+    var total = totalFor(viewDate);
+    var target = data.target || DEFAULT_TARGET;
+    var r = 52, c = 2 * Math.PI * r;
+    var frac = target > 0 ? Math.min(1, total / target) : 0;
+    var fill = $("ringFill");
+    fill.setAttribute("stroke-dasharray", c);
+    fill.setAttribute("stroke-dashoffset", c * (1 - frac));
+    var met = total >= target && target > 0;
+    fill.style.stroke = met ? "#22c55e" : "";
+    $("ringAmt").textContent = total;
+    $("ringTarget").textContent = "of " + target + " ml";
+    var note = $("ringNote");
+    if (met) {
+      note.textContent = "🎉 Target hit — nice work.";
+      note.className = "ring-note met";
+    } else {
+      var left = target - total;
+      note.textContent = left + " ml to go.";
+      note.className = "ring-note";
+    }
+  }
+
+  function renderQuickAdd(){
+    $("quickAdd").innerHTML = QUICK_AMOUNTS.map(function(a){
+      return '<button class="chip" data-amt="' + a + '">+' + a + 'ml</button>';
+    }).join("");
+  }
+
+  function addEntry(amount){
+    amount = Math.round(amount);
+    if (!amount || amount <= 0) { banner("Enter a valid amount.", "warn"); return; }
+    if (!data.logs[viewDate]) data.logs[viewDate] = [];
+    data.logs[viewDate].push({ id: slugId(), amount: amount, time: nowTimeStr() });
+    save();
+    render();
+    banner("Logged " + amount + " ml.");
+  }
+
+  function renderEntries(){
+    var entries = data.logs[viewDate] || [];
+    $("entriesEmpty").className = entries.length ? "hint hide" : "hint";
+    $("entryList").innerHTML = entries.map(function(e, i){
+      return '<span class="entrychip">' + e.amount + 'ml <span class="t">' + esc(e.time) + '</span>' +
+        ' <button data-idx="' + i + '" aria-label="Remove entry">&#10005;</button></span>';
+    }).join("");
+  }
+
+  function renderTrend(){
+    var target = data.target || DEFAULT_TARGET;
+    var html = "";
+    for (var i = 6; i >= 0; i--) {
+      var dk = shiftDate(todayKey(), -i);
+      var total = totalFor(dk);
+      var met = total >= target && target > 0;
+      var pct = target > 0 ? Math.min(100, Math.round(total / target * 100)) : 0;
+      html += '<div class="trendrow">' +
+        '<div class="trendday">' + DOW_SHORT[dateOf(dk).getDay()] + '</div>' +
+        '<div class="trendtrack"><div class="trendfill' + (met ? " met" : "") + '" style="width:' + pct + '%"></div></div>' +
+        '<div class="trendamt">' + total + ' ml</div>' +
+      '</div>';
+    }
+    $("trendCard").innerHTML = html;
+  }
+
+  // ---- events ----
+  $("prev").onclick = function(){ viewDate = shiftDate(viewDate, -1); render(); };
+  $("next").onclick = function(){ viewDate = shiftDate(viewDate, 1); render(); };
+  $("jumpToday").onclick = function(){ viewDate = todayKey(); render(); };
+
+  $("quickAdd").onclick = function(e){
+    var b = e.target.closest("[data-amt]"); if (!b) return;
+    addEntry(+b.getAttribute("data-amt"));
+  };
+  $("customAddBtn").onclick = function(){
+    var v = +$("customAmt").value;
+    addEntry(v);
+    $("customAmt").value = "";
+  };
+  $("customAmt").addEventListener("keydown", function(e){ if (e.key === "Enter") $("customAddBtn").click(); });
+
+  $("entryList").onclick = function(e){
+    var b = e.target.closest("[data-idx]"); if (!b) return;
+    var idx = +b.getAttribute("data-idx");
+    var entries = data.logs[viewDate] || [];
+    entries.splice(idx, 1);
+    save(); render();
+  };
+
+  $("editTargetBtn").onclick = function(){
+    $("targetInput").value = data.target || DEFAULT_TARGET;
+    $("targetForm").className = "";
+    $("targetInput").focus();
+  };
+  $("targetSave").onclick = function(){
+    var v = +$("targetInput").value;
+    if (!v || v <= 0) { banner("Enter a valid target.", "warn"); return; }
+    data.target = Math.round(v);
+    save();
+    $("targetForm").className = "hide";
+    render();
+    banner("Target updated.");
+  };
+
+  $("exportBtn").onclick = function(){
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "hydration-coach-backup-" + todayKey() + ".json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  };
+  $("importBtn").onclick = function(){ $("importFile").click(); };
+  $("importFile").onchange = function(e){
+    var f = e.target.files[0]; if (!f) return;
+    var r = new FileReader();
+    r.onload = function(){
+      try {
+        var p = JSON.parse(r.result);
+        if (!p || typeof p !== "object" || !p.logs) throw new Error("bad file");
+        data = { logs: p.logs || {}, target: p.target || DEFAULT_TARGET };
+        save(); render();
+        banner("Backup restored.");
+      } catch (err) {
+        banner("That file isn't a Hydration Coach backup.", "warn");
+      }
+      e.target.value = "";
+    };
+    r.readAsText(f);
+  };
+
+  // ---- boot ----
+  load();
+  if (!storageOK) banner("This browser is blocking local storage, so nothing will save. Turn off Private Browsing.", "warn");
+  render();
+  setInterval(function(){ if (viewDate === todayKey()) render(); }, 60000);
+  document.addEventListener("visibilitychange", function(){ if (!document.hidden) render(); });
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js").catch(function(){});
+    });
+  }
+})();
+</script>
+</body>
+</html>
