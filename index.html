@@ -140,7 +140,7 @@
   .striphint { font-size:11px; color:var(--faint); margin-top:11px; text-align:center; }
   .editrow { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); }
   .editrow:last-child { border-bottom:none; }
-  .editrow .dn { width:20px; height:20px; border-radius:6px; background:var(--line); color:var(--muted);
+  .editrow .dn { min-width:34px; height:20px; padding:0 6px; border-radius:6px; background:var(--line); color:var(--muted);
     font-size:10.5px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .nowline { display:flex; align-items:center; gap:8px; padding:3px 14px 3px 8px; }
   .nowline .nt { font-size:9.5px; font-weight:800; color:#ef4444; letter-spacing:.6px; }
@@ -212,7 +212,7 @@
   <div class="cyclehero" id="cycleHero">
     <div class="top">
       <div class="lbl">7-day gym cycle</div>
-      <div class="daynum" id="cycleDayNum">Day 1 of 7</div>
+      <div class="daynum" id="cycleDayNum">Monday</div>
     </div>
     <div class="title" id="cycleTitle"></div>
     <div class="sub" id="cycleSub"></div>
@@ -220,7 +220,7 @@
 
   <div class="card pad" id="cycleStripCard" style="margin-bottom:14px">
     <div class="stripgrid" id="cycleStrip"></div>
-    <div class="striphint">Cycles every 7 days on its own, independent of the calendar week.</div>
+    <div class="striphint">Follows the calendar week &mdash; Monday through Sunday.</div>
     <button class="jump" id="cycleEditToggle" style="margin-top:10px">Edit cycle</button>
   </div>
 
@@ -467,7 +467,7 @@
   function $(id){ return document.getElementById(id); }
 
   var data = { days:{}, template:[], goal:null, favorites:[], lastCelebratedStreak:0,
-    gymCycle: { start: todayKey(), days: DEFAULT_CYCLE_DAYS.slice() } };
+    gymCycle: { days: DEFAULT_CYCLE_DAYS.slice() } };
   var viewDate = todayKey();
   var editingId = null;
   var draft = { text:"", timeStart:"", timeEnd:"", priority:"medium", pillar:"none" };
@@ -479,7 +479,7 @@
       if (raw) {
         var p = JSON.parse(raw);
         data = { days: p.days || {}, template: p.template || [], goal: p.goal || null, favorites: p.favorites || [], lastCelebratedStreak: p.lastCelebratedStreak || 0,
-          gymCycle: p.gymCycle || { start: todayKey(), days: DEFAULT_CYCLE_DAYS.slice() } };
+          gymCycle: { days: (p.gymCycle && p.gymCycle.days) || DEFAULT_CYCLE_DAYS.slice() } };
         return true;
       }
     } catch (e) { storageOK = false; }
@@ -568,10 +568,8 @@
     }
   }
 
-  function cycleDayIndex(dk){
-    var diff = Math.round((dateOf(dk) - dateOf(data.gymCycle.start)) / 86400000);
-    return ((diff % 7) + 7) % 7;
-  }
+  var WEEKDAY_ABBR = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  function cycleDayIndex(dk){ return (dateOf(dk).getDay() + 6) % 7; }
   function splitTitleSub(text){
     var i = text.indexOf("—");
     if (i === -1) return { title: text, sub: "" };
@@ -585,7 +583,7 @@
     var raw = days[idx] || "";
     var rest = isRestDay(raw);
 
-    $("cycleDayNum").textContent = "Day " + (idx + 1) + " of 7";
+    $("cycleDayNum").textContent = DOW[dateOf(viewDate).getDay()];
     if (rest) {
       $("cycleTitle").textContent = "Rest day";
       $("cycleSub").className = "sub hide";
@@ -602,14 +600,14 @@
       var r = isRestDay(t);
       var label = r ? "Rest" : splitTitleSub(t).title;
       html += '<div class="chip ' + (r ? "rest" : "gym") + (i === idx ? " today" : "") + '">' +
-        '<div class="cd">' + (i + 1) + '</div><div class="cw">' + esc(label) + '</div></div>';
+        '<div class="cd">' + WEEKDAY_ABBR[i] + '</div><div class="cw">' + esc(label) + '</div></div>';
     }
     $("cycleStrip").innerHTML = html;
   }
   function openCycleEditor(){
     var rows = "";
     for (var i = 0; i < 7; i++) {
-      rows += '<div class="editrow"><div class="dn">' + (i + 1) + '</div>' +
+      rows += '<div class="editrow"><div class="dn">' + WEEKDAY_ABBR[i] + '</div>' +
         '<input class="field" data-idx="' + i + '" value="' + esc(data.gymCycle.days[i] || "") + '" /></div>';
     }
     $("cycleEditRows").innerHTML = rows;
@@ -1016,7 +1014,7 @@
         var p = JSON.parse(r.result);
         if (!p || typeof p !== "object" || !p.days) throw new Error("bad file");
         data = { days: p.days || {}, template: p.template || [], goal: p.goal || null, favorites: p.favorites || [], lastCelebratedStreak: p.lastCelebratedStreak || 0,
-          gymCycle: p.gymCycle || { start: todayKey(), days: DEFAULT_CYCLE_DAYS.slice() } };
+          gymCycle: { days: (p.gymCycle && p.gymCycle.days) || DEFAULT_CYCLE_DAYS.slice() } };
         save(); render();
         banner("Backup restored.");
       } catch (err) {
