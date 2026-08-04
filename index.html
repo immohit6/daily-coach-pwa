@@ -1063,6 +1063,7 @@
   var timerRemaining = 60;
   var timerRunning = false;
   var timerInterval = null;
+  var timerEndAt = null;
 
   function fmtTime(s){
     var m = Math.floor(s / 60), sec = s % 60;
@@ -1110,6 +1111,7 @@
   function stopTimerInterval(){
     timerRunning = false;
     clearInterval(timerInterval);
+    timerInterval = null;
   }
   function renderNotifyToggle(){
     var btn = $("notifyToggle");
@@ -1134,31 +1136,42 @@
       }
     } catch (e) {}
   }
+  function completeTimer(){
+    timerRemaining = 0;
+    stopTimerInterval();
+    timerEndAt = null;
+    playRestBeep();
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    banner("⏱️ Rest over — let's go!");
+    fireRestNotification();
+    var card = $("timerCard");
+    card.className = "card pad timerdone";
+    setTimeout(function(){ card.className = "card pad"; }, 650);
+    renderTimer();
+  }
   function tickTimer(){
-    timerRemaining--;
-    if (timerRemaining <= 0) {
-      timerRemaining = 0;
-      stopTimerInterval();
-      playRestBeep();
-      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-      banner("⏱️ Rest over — let's go!");
-      fireRestNotification();
-      var card = $("timerCard");
-      card.className = "card pad timerdone";
-      setTimeout(function(){ card.className = "card pad"; }, 650);
-    }
+    if (!timerRunning || !timerEndAt) return;
+    // Recompute from the wall clock rather than just decrementing —
+    // setInterval gets throttled or paused while the tab is backgrounded,
+    // so trusting tick counts alone leaves the display stuck or wrong
+    // when you come back.
+    var remaining = Math.max(0, Math.ceil((timerEndAt - Date.now()) / 1000));
+    timerRemaining = remaining;
+    if (remaining <= 0) { completeTimer(); return; }
     renderTimer();
   }
   function startPauseTimer(){
     if (timerRunning) { stopTimerInterval(); renderTimer(); return; }
     if (timerRemaining <= 0) timerRemaining = timerDuration;
     timerRunning = true;
+    timerEndAt = Date.now() + timerRemaining * 1000;
     timerInterval = setInterval(tickTimer, 1000);
     renderTimer();
   }
   function resetTimer(){
     stopTimerInterval();
     timerRemaining = timerDuration;
+    timerEndAt = null;
     renderTimer();
   }
   $("timerPresets").onclick = function(e){
@@ -1166,6 +1179,7 @@
     stopTimerInterval();
     timerDuration = +b.getAttribute("data-s");
     timerRemaining = timerDuration;
+    timerEndAt = null;
     paintTimerPresets();
     renderTimer();
   };
@@ -1185,7 +1199,10 @@
   renderQuote();
   render();
   setInterval(function(){ renderQuote(); if (viewDate === todayKey()) render(); }, 60000);
-  document.addEventListener("visibilitychange", function(){ renderQuote(); if (!document.hidden) render(); });
+  document.addEventListener("visibilitychange", function(){
+    renderQuote();
+    if (!document.hidden) { render(); tickTimer(); }
+  });
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function(){
