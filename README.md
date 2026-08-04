@@ -1,14 +1,19 @@
 # Daily Coach — install on your iPhone
 
-A self-contained web app. No build step, no server code, no dependencies.
+Two self-contained web apps living in one folder: **Daily Coach** (daily plan,
+goal, streak) and **Gym Coach** (7-day gym cycle, rest timer, workout log).
+No build step, no server code, no dependencies.
 
 ## Files
-- `index.html` — the whole app
-- `manifest.webmanifest` — makes it installable
-- `sw.js` — service worker, gives you offline access
-- `icon-*.png` — home screen icons
+- `index.html` — Daily Coach
+- `manifest.webmanifest` / `icon-*.png` — Daily Coach install assets
+- `gym.html` — Gym Coach
+- `gym-manifest.webmanifest` / `gym-icon-*.png` — Gym Coach install assets
+- `sw.js` — shared service worker, gives both apps offline access
 
-Keep all files in the **same folder**. Don't rename anything.
+Keep all files in the **same folder**. Don't rename anything. The two apps link
+to each other from their header, and each installs to your home screen as its
+own separate icon.
 
 ---
 
@@ -38,6 +43,10 @@ no account needed to start.
 4. Name it "Daily Coach", tap **Add**.
 
 You now have an app icon. It opens full-screen with no browser bar and works offline.
+
+To also install **Gym Coach** as its own separate icon, open
+`https://YOURNAME.github.io/daily-coach/gym.html` in Safari and repeat the same
+three steps. It gets its own home screen icon, distinct from Daily Coach's.
 
 ## Step 3 — First run
 

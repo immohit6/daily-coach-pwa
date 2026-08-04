@@ -120,40 +120,6 @@
   .goal .gd { font-size:11.5px; color:#a5b4fc; margin-top:3px; }
   .goal button { border:none; background:rgba(255,255,255,.14); color:#e2e8f0; border-radius:8px; padding:8px 11px; font-size:12px; font-weight:600; flex-shrink:0; }
 
-  .cyclehero { background:linear-gradient(135deg,#0f172a,#1e293b); color:#fff; border-radius:16px; padding:16px 18px; margin-bottom:10px; }
-  .cyclehero .top { display:flex; align-items:center; justify-content:space-between; margin-bottom:2px; }
-  .cyclehero .lbl { font-size:10.5px; letter-spacing:.6px; text-transform:uppercase; color:#94a3b8; font-weight:700; }
-  .cyclehero .daynum { font-size:10.5px; letter-spacing:.6px; text-transform:uppercase; color:#fdba74; font-weight:800; }
-  .cyclehero .title { font-size:19px; font-weight:800; margin-top:4px; }
-  .cyclehero .sub { font-size:12.5px; color:#cbd5e1; margin-top:5px; line-height:1.5; }
-  .cyclehero .sub.hide { display:none; }
-  .stripgrid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
-  .wdchip { border-radius:11px; padding:8px 3px 7px; text-align:center; background:var(--line); border:2px solid transparent; }
-  .wdchip .cd { font-size:9.5px; font-weight:800; color:var(--faint); letter-spacing:.3px; }
-  .wdchip .cw { font-size:10px; font-weight:700; color:var(--muted); margin-top:3px; line-height:1.25; min-height:24px;
-    display:flex; align-items:center; justify-content:center; }
-  .wdchip.gym { background:#fff7ed; }
-  .wdchip.gym .cw { color:#c2410c; }
-  .wdchip.rest .cw { color:var(--faint); }
-  .wdchip.today { border-color:#f97316; }
-  .wdchip.today .cd { color:#f97316; }
-  .striphint { font-size:11px; color:var(--faint); margin-top:11px; text-align:center; }
-  .editrow { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); }
-  .editrow:last-child { border-bottom:none; }
-  .editrow .dn { min-width:34px; height:20px; padding:0 6px; border-radius:6px; background:var(--line); color:var(--muted);
-    font-size:10.5px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-
-  .timerwrap { position:relative; width:160px; height:160px; margin:4px auto 0; }
-  .timer-svg { width:100%; height:100%; transform:rotate(-90deg); }
-  .timer-track { fill:none; stroke:var(--border); stroke-width:10; }
-  .timer-fill { fill:none; stroke:var(--accent); stroke-width:10; stroke-linecap:round; transition:stroke-dashoffset 1s linear, stroke .3s ease; }
-  .timer-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-  .timer-time { font-size:32px; font-weight:900; color:var(--ink); line-height:1; font-variant-numeric:tabular-nums; }
-  .timer-label { font-size:11px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:.5px; margin-top:4px; }
-  .timerdone { animation:timerFlash .6s ease; }
-  @keyframes timerFlash { 0% { box-shadow:0 0 0 0 rgba(34,197,94,.45); } 100% { box-shadow:0 0 0 16px rgba(34,197,94,0); } }
-  @media (prefers-reduced-motion:reduce) { .timerdone { animation:none; } }
-
   .nowline { display:flex; align-items:center; gap:8px; padding:3px 14px 3px 8px; }
   .nowline .nt { font-size:9.5px; font-weight:800; color:#ef4444; letter-spacing:.6px; }
   .nowline .nl { flex:1; height:2px; background:#ef4444; border-radius:2px; opacity:.55; }
@@ -183,6 +149,13 @@
 <body>
 <div class="wrap">
   <div id="banner" class="banner info hide"></div>
+
+  <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+    <a href="gym.html" style="border:none;background:var(--card);border-radius:8px;padding:8px 11px;
+      box-shadow:0 1px 2px rgba(0,0,0,.06);color:#475569;font-size:12px;font-weight:700;text-decoration:none">
+      &#127939;&#65039; Gym Coach
+    </a>
+  </div>
 
   <div class="quote" id="quoteBox">
     <div class="quote-row">
@@ -219,50 +192,6 @@
       </div>
     </div>
     <div class="wheel-next" id="wheelNext"></div>
-  </div>
-
-  <div class="cyclehero" id="cycleHero">
-    <div class="top">
-      <div class="lbl">7-day gym cycle</div>
-      <div class="daynum" id="cycleDayNum">Monday</div>
-    </div>
-    <div class="title" id="cycleTitle"></div>
-    <div class="sub" id="cycleSub"></div>
-  </div>
-
-  <div class="card pad" id="cycleStripCard" style="margin-bottom:14px">
-    <div class="stripgrid" id="cycleStrip"></div>
-    <div class="striphint">Follows the calendar week &mdash; Monday through Sunday.</div>
-    <button class="jump" id="cycleEditToggle" style="margin-top:10px">Edit cycle</button>
-  </div>
-
-  <div class="card pad hide" id="cycleEditor" style="margin-bottom:14px">
-    <div id="cycleEditRows"></div>
-    <div class="hint" style="margin:10px 0">Leave a day blank (or type &quot;rest&quot;) and it&#39;s styled as a rest day.</div>
-    <div style="display:flex;gap:8px">
-      <button class="btn dark" id="cycleSave">Save cycle</button>
-      <button class="btn" id="cycleCancel" style="flex:0;padding:10px 18px">Cancel</button>
-    </div>
-  </div>
-
-  <div class="card pad" id="timerCard" style="margin-bottom:14px">
-    <div class="sec" style="margin-bottom:12px">Rest timer</div>
-    <div class="timerwrap">
-      <svg viewBox="0 0 120 120" class="timer-svg">
-        <circle class="timer-track" cx="60" cy="60" r="52" />
-        <circle class="timer-fill" id="timerFill" cx="60" cy="60" r="52" />
-      </svg>
-      <div class="timer-center">
-        <div class="timer-time" id="timerTime">1:00</div>
-        <div class="timer-label" id="timerLabel">Rest timer</div>
-      </div>
-    </div>
-    <div class="chips" id="timerPresets" style="justify-content:center;margin:14px 0 12px"></div>
-    <div class="actions" style="margin:0">
-      <button class="btn primary" id="timerStart">Start</button>
-      <button class="btn" id="timerReset">Reset</button>
-    </div>
-    <button class="jump" id="notifyToggle" style="display:block;margin:12px auto 0;text-align:center"></button>
   </div>
 
   <div class="card pad hide" id="goalEditor" style="margin-bottom:14px">
@@ -460,16 +389,6 @@
     { text:"20-min walk",                             priority:"low",    timeStart:null,    timeEnd:null,    pillar:"body" }
   ];
 
-  var DEFAULT_CYCLE_DAYS = [
-    "Push — chest, shoulders, triceps",
-    "Pull — back, biceps",
-    "Legs — squats, RDLs, leg press, calves",
-    "Rest",
-    "Upper body",
-    "Lower body",
-    "Rest"
-  ];
-
   function pad(n){ return n < 10 ? "0" + n : "" + n; }
   function keyOf(d){ return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()); }
   function todayKey(){ return keyOf(new Date()); }
@@ -498,8 +417,7 @@
   }
   function $(id){ return document.getElementById(id); }
 
-  var data = { days:{}, template:[], goal:null, favorites:[], lastCelebratedStreak:0,
-    gymCycle: { days: DEFAULT_CYCLE_DAYS.slice() } };
+  var data = { days:{}, template:[], goal:null, favorites:[], lastCelebratedStreak:0 };
   var viewDate = todayKey();
   var editingId = null;
   var draft = { text:"", timeStart:"", timeEnd:"", priority:"medium", pillar:"none" };
@@ -510,8 +428,7 @@
       var raw = localStorage.getItem(KEY);
       if (raw) {
         var p = JSON.parse(raw);
-        data = { days: p.days || {}, template: p.template || [], goal: p.goal || null, favorites: p.favorites || [], lastCelebratedStreak: p.lastCelebratedStreak || 0,
-          gymCycle: { days: (p.gymCycle && p.gymCycle.days) || DEFAULT_CYCLE_DAYS.slice() } };
+        data = { days: p.days || {}, template: p.template || [], goal: p.goal || null, favorites: p.favorites || [], lastCelebratedStreak: p.lastCelebratedStreak || 0 };
         return true;
       }
     } catch (e) { storageOK = false; }
@@ -600,51 +517,6 @@
     }
   }
 
-  var WEEKDAY_ABBR = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-  function cycleDayIndex(dk){ return (dateOf(dk).getDay() + 6) % 7; }
-  function splitTitleSub(text){
-    var i = text.indexOf("—");
-    if (i === -1) return { title: text, sub: "" };
-    return { title: text.slice(0, i).trim(), sub: text.slice(i + 1).trim() };
-  }
-  function isRestDay(text){ return !text || /^rest$/i.test(text.trim()); }
-
-  function renderGymCycle(){
-    var idx = cycleDayIndex(viewDate);
-    var days = data.gymCycle.days;
-    var raw = days[idx] || "";
-    var rest = isRestDay(raw);
-
-    $("cycleDayNum").textContent = DOW[dateOf(viewDate).getDay()];
-    if (rest) {
-      $("cycleTitle").textContent = "Rest day";
-      $("cycleSub").className = "sub hide";
-    } else {
-      var parts = splitTitleSub(raw);
-      $("cycleTitle").textContent = parts.title;
-      $("cycleSub").textContent = parts.sub;
-      $("cycleSub").className = parts.sub ? "sub" : "sub hide";
-    }
-
-    var html = "";
-    for (var i = 0; i < 7; i++) {
-      var t = days[i] || "";
-      var r = isRestDay(t);
-      var label = r ? "Rest" : splitTitleSub(t).title;
-      html += '<div class="wdchip ' + (r ? "rest" : "gym") + (i === idx ? " today" : "") + '">' +
-        '<div class="cd">' + WEEKDAY_ABBR[i] + '</div><div class="cw">' + esc(label) + '</div></div>';
-    }
-    $("cycleStrip").innerHTML = html;
-  }
-  function openCycleEditor(){
-    var rows = "";
-    for (var i = 0; i < 7; i++) {
-      rows += '<div class="editrow"><div class="dn">' + WEEKDAY_ABBR[i] + '</div>' +
-        '<input class="field" data-idx="' + i + '" value="' + esc(data.gymCycle.days[i] || "") + '" /></div>';
-    }
-    $("cycleEditRows").innerHTML = rows;
-    $("cycleEditor").className = "card pad";
-  }
 
   function renderTaskRow(t, showTime, active){
     var pil = PILLARS[t.pillar] || PILLARS.none;
@@ -680,7 +552,6 @@
     $("streak").innerHTML = "&#128293; " + st;
     $("streak").className = st > 0 ? "streak on" : "streak";
     renderStreakWheel();
-    renderGymCycle();
 
     var done = tasks.filter(function(t){ return t.done; }).length;
     var pct = tasks.length ? Math.round(done / tasks.length * 100) : 0;
@@ -1002,19 +873,6 @@
     save(); $("goalEditor").className = "card pad hide"; render();
   };
 
-  $("cycleEditToggle").onclick = openCycleEditor;
-  $("cycleCancel").onclick = function(){ $("cycleEditor").className = "card pad hide"; };
-  $("cycleSave").onclick = function(){
-    var inputs = $("cycleEditRows").querySelectorAll("input");
-    var days = data.gymCycle.days.slice();
-    inputs.forEach(function(inp){ days[+inp.getAttribute("data-idx")] = inp.value.trim(); });
-    data.gymCycle.days = days;
-    save();
-    $("cycleEditor").className = "card pad hide";
-    render();
-    banner("Gym cycle updated.");
-  };
-
   function quickAdd(){
     var v = $("qaInput").value.trim();
     if (!v) return;
@@ -1045,8 +903,7 @@
       try {
         var p = JSON.parse(r.result);
         if (!p || typeof p !== "object" || !p.days) throw new Error("bad file");
-        data = { days: p.days || {}, template: p.template || [], goal: p.goal || null, favorites: p.favorites || [], lastCelebratedStreak: p.lastCelebratedStreak || 0,
-          gymCycle: { days: (p.gymCycle && p.gymCycle.days) || DEFAULT_CYCLE_DAYS.slice() } };
+        data = { days: p.days || {}, template: p.template || [], goal: p.goal || null, favorites: p.favorites || [], lastCelebratedStreak: p.lastCelebratedStreak || 0 };
         save(); render();
         banner("Backup restored.");
       } catch (err) {
@@ -1057,152 +914,13 @@
     r.readAsText(f);
   };
 
-  // ---- rest timer ----
-  var TIMER_PRESETS = [30, 60, 90, 120];
-  var timerDuration = 60;
-  var timerRemaining = 60;
-  var timerRunning = false;
-  var timerInterval = null;
-  var timerEndAt = null;
-
-  function fmtTime(s){
-    var m = Math.floor(s / 60), sec = s % 60;
-    return m + ":" + (sec < 10 ? "0" : "") + sec;
-  }
-  function paintTimerPresets(){
-    $("timerPresets").innerHTML = TIMER_PRESETS.map(function(s){
-      var on = s === timerDuration;
-      return '<button class="chip" data-s="' + s + '" style="' +
-        (on ? "border-color:var(--accent);color:var(--accent);background:#6366f118" : "") +
-        '">' + s + 's</button>';
-    }).join("");
-  }
-  function renderTimer(){
-    var r = 52, c = 2 * Math.PI * r;
-    var frac = timerDuration > 0 ? timerRemaining / timerDuration : 0;
-    frac = Math.max(0, Math.min(1, frac));
-    var fill = $("timerFill");
-    fill.setAttribute("stroke-dasharray", c);
-    fill.setAttribute("stroke-dashoffset", c * (1 - frac));
-    fill.style.stroke = (timerRunning && timerRemaining > 0 && timerRemaining <= 10) ? "#f59e0b" : "";
-    $("timerTime").textContent = fmtTime(timerRemaining);
-    $("timerLabel").textContent = timerRunning ? "Resting…" :
-      (timerRemaining === 0 ? "Time's up!" : (timerRemaining < timerDuration ? "Paused" : "Rest timer"));
-    $("timerStart").textContent = timerRunning ? "Pause" :
-      (timerRemaining > 0 && timerRemaining < timerDuration ? "Resume" : "Start");
-  }
-  function playRestBeep(){
-    try {
-      var Ctx = window.AudioContext || window.webkitAudioContext;
-      var ctx = new Ctx();
-      [880, 1046].forEach(function(freq, i){
-        setTimeout(function(){
-          var o = ctx.createOscillator(), g = ctx.createGain();
-          o.type = "sine"; o.frequency.value = freq;
-          g.gain.setValueAtTime(0.0001, ctx.currentTime);
-          g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.02);
-          g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.45);
-          o.connect(g); g.connect(ctx.destination);
-          o.start(); o.stop(ctx.currentTime + 0.46);
-        }, i * 260);
-      });
-    } catch (e) {}
-  }
-  function stopTimerInterval(){
-    timerRunning = false;
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
-  function renderNotifyToggle(){
-    var btn = $("notifyToggle");
-    if (!("Notification" in window)) { btn.className = "hide"; return; }
-    btn.className = "jump";
-    if (Notification.permission === "granted") btn.textContent = "🔔 Notifications on";
-    else if (Notification.permission === "denied") btn.textContent = "🔕 Notifications blocked — check browser settings";
-    else btn.textContent = "🔔 Enable notifications";
-  }
-  function fireRestNotification(){
-    if (!("Notification" in window) || Notification.permission !== "granted") return;
-    var title = "⏱️ Rest over — let's go!";
-    var opts = { body: "Time for your next set.", icon: "icon-192.png", badge: "icon-192.png", tag: "daily-coach-rest" };
-    try {
-      if (navigator.serviceWorker && navigator.serviceWorker.ready) {
-        navigator.serviceWorker.ready.then(function(reg){
-          if (reg && reg.showNotification) reg.showNotification(title, opts);
-          else new Notification(title, opts);
-        }).catch(function(){ try { new Notification(title, opts); } catch (e) {} });
-      } else {
-        new Notification(title, opts);
-      }
-    } catch (e) {}
-  }
-  function completeTimer(){
-    timerRemaining = 0;
-    stopTimerInterval();
-    timerEndAt = null;
-    playRestBeep();
-    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-    banner("⏱️ Rest over — let's go!");
-    fireRestNotification();
-    var card = $("timerCard");
-    card.className = "card pad timerdone";
-    setTimeout(function(){ card.className = "card pad"; }, 650);
-    renderTimer();
-  }
-  function tickTimer(){
-    if (!timerRunning || !timerEndAt) return;
-    // Recompute from the wall clock rather than just decrementing —
-    // setInterval gets throttled or paused while the tab is backgrounded,
-    // so trusting tick counts alone leaves the display stuck or wrong
-    // when you come back.
-    var remaining = Math.max(0, Math.ceil((timerEndAt - Date.now()) / 1000));
-    timerRemaining = remaining;
-    if (remaining <= 0) { completeTimer(); return; }
-    renderTimer();
-  }
-  function startPauseTimer(){
-    if (timerRunning) { stopTimerInterval(); renderTimer(); return; }
-    if (timerRemaining <= 0) timerRemaining = timerDuration;
-    timerRunning = true;
-    timerEndAt = Date.now() + timerRemaining * 1000;
-    timerInterval = setInterval(tickTimer, 1000);
-    renderTimer();
-  }
-  function resetTimer(){
-    stopTimerInterval();
-    timerRemaining = timerDuration;
-    timerEndAt = null;
-    renderTimer();
-  }
-  $("timerPresets").onclick = function(e){
-    var b = e.target.closest("[data-s]"); if (!b) return;
-    stopTimerInterval();
-    timerDuration = +b.getAttribute("data-s");
-    timerRemaining = timerDuration;
-    timerEndAt = null;
-    paintTimerPresets();
-    renderTimer();
-  };
-  $("timerStart").onclick = startPauseTimer;
-  $("timerReset").onclick = resetTimer;
-  $("notifyToggle").onclick = function(){
-    if (!("Notification" in window) || Notification.permission !== "default") return;
-    Notification.requestPermission().then(renderNotifyToggle);
-  };
-  paintTimerPresets();
-  renderTimer();
-  renderNotifyToggle();
-
   // ---- boot ----
   if (!load()) seedFirstRun();
   if (!storageOK) banner("This browser is blocking local storage, so nothing will save. Turn off Private Browsing.", "warn");
   renderQuote();
   render();
   setInterval(function(){ renderQuote(); if (viewDate === todayKey()) render(); }, 60000);
-  document.addEventListener("visibilitychange", function(){
-    renderQuote();
-    if (!document.hidden) { render(); tickTimer(); }
-  });
+  document.addEventListener("visibilitychange", function(){ renderQuote(); if (!document.hidden) render(); });
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function(){

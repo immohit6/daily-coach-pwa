@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0f172a" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Gym Coach" />
+<link rel="manifest" href="gym-manifest.webmanifest" />
+<link rel="apple-touch-icon" href="gym-icon-180.png" />
+<title>Gym Coach</title>
+<style>
+  :root {
+    --bg:#f8fafc; --card:#ffffff; --ink:#0f172a; --muted:#64748b; --faint:#94a3b8;
+    --line:#f1f5f9; --border:#e2e8f0; --accent:#f97316; --good:#22c55e;
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; padding:0; background:var(--bg); }
+  body {
+    font-family:-apple-system,BlinkMacSystemFont,'Inter',system-ui,sans-serif;
+    color:var(--ink);
+    padding:max(env(safe-area-inset-top),16px) 16px calc(env(safe-area-inset-bottom) + 32px);
+  }
+  .wrap { max-width:640px; margin:0 auto; }
+  button { font-family:inherit; cursor:pointer; }
+  input, select { font-family:inherit; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+  .banner { padding:10px 14px; border-radius:10px; margin-bottom:14px; font-size:13px; font-weight:600; }
+  .banner.info { background:#fff7ed; color:#9a3412; }
+  .banner.warn { background:#fef2f2; color:#b91c1c; }
+
+  .head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .apptitle { font-size:19px; font-weight:800; display:flex; align-items:center; gap:8px; }
+  .backlink { border:none; background:var(--card); border-radius:8px; padding:8px 11px; box-shadow:0 1px 2px rgba(0,0,0,.06); color:#475569; font-size:12px; font-weight:700; text-decoration:none; }
+
+  .nav { display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:18px; }
+  .navbtn { border:none; background:var(--card); border-radius:8px; padding:8px 10px; box-shadow:0 1px 2px rgba(0,0,0,.06); color:#475569; font-size:15px; line-height:1; }
+  .dateblk { min-width:170px; text-align:center; }
+  .dateblk .d { font-size:16px; font-weight:700; }
+  .jump { border:none; background:none; color:var(--accent); font-size:12px; font-weight:600; padding:0; }
+
+  .card { background:var(--card); border-radius:16px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+  .pad { padding:18px 20px; }
+  .sec { font-size:12px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; padding-left:4px; }
+  .hint { font-size:11.5px; color:var(--faint); margin-top:8px; }
+  .field { width:100%; border:1px solid var(--border); border-radius:9px; padding:10px 11px; font-size:16px; color:var(--ink); background:#fff; outline:none; }
+  .row2 { display:flex; gap:10px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chip { border:1.5px solid var(--border); background:#fff; color:var(--muted); border-radius:999px; padding:7px 13px; font-size:12px; font-weight:700; }
+  .actions { display:flex; gap:8px; margin:14px 0 0; }
+  .btn { flex:1; display:flex; align-items:center; justify-content:center; gap:6px;
+    border:1px solid var(--border); background:var(--card); color:#475569;
+    border-radius:10px; padding:10px 8px; font-size:12.5px; font-weight:600; }
+  .btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .btn.dark { background:var(--ink); border-color:var(--ink); color:#fff; }
+  .iconbtn { border:none; background:none; padding:6px; font-size:13px; line-height:1; color:var(--faint); }
+  .hide { display:none !important; }
+  @media (prefers-reduced-motion:reduce) { * { transition:none !important; } }
+
+  /* ---- gym cycle ---- */
+  .cyclehero { background:linear-gradient(135deg,#0f172a,#1e293b); color:#fff; border-radius:16px; padding:16px 18px; margin-bottom:10px; }
+  .cyclehero .top { display:flex; align-items:center; justify-content:space-between; margin-bottom:2px; }
+  .cyclehero .lbl { font-size:10.5px; letter-spacing:.6px; text-transform:uppercase; color:#94a3b8; font-weight:700; }
+  .cyclehero .daynum { font-size:10.5px; letter-spacing:.6px; text-transform:uppercase; color:#fdba74; font-weight:800; }
+  .cyclehero .title { font-size:19px; font-weight:800; margin-top:4px; }
+  .cyclehero .sub { font-size:12.5px; color:#cbd5e1; margin-top:5px; line-height:1.5; }
+  .cyclehero .sub.hide { display:none; }
+  .stripgrid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .wdchip { border-radius:11px; padding:8px 3px 7px; text-align:center; background:var(--line); border:2px solid transparent; }
+  .wdchip .cd { font-size:9.5px; font-weight:800; color:var(--faint); letter-spacing:.3px; }
+  .wdchip .cw { font-size:10px; font-weight:700; color:var(--muted); margin-top:3px; line-height:1.25; min-height:24px;
+    display:flex; align-items:center; justify-content:center; }
+  .wdchip.gym { background:#fff7ed; }
+  .wdchip.gym .cw { color:#c2410c; }
+  .wdchip.rest .cw { color:var(--faint); }
+  .wdchip.today { border-color:#f97316; }
+  .wdchip.today .cd { color:#f97316; }
+  .striphint { font-size:11px; color:var(--faint); margin-top:11px; text-align:center; }
+  .editrow { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); }
+  .editrow:last-child { border-bottom:none; }
+  .editrow .dn { min-width:34px; height:20px; padding:0 6px; border-radius:6px; background:var(--line); color:var(--muted);
+    font-size:10.5px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+  /* ---- rest timer ---- */
+  .timerwrap { position:relative; width:160px; height:160px; margin:4px auto 0; }
+  .timer-svg { width:100%; height:100%; transform:rotate(-90deg); }
+  .timer-track { fill:none; stroke:var(--border); stroke-width:10; }
+  .timer-fill { fill:none; stroke:var(--accent); stroke-width:10; stroke-linecap:round; transition:stroke-dashoffset 1s linear, stroke .3s ease; }
+  .timer-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .timer-time { font-size:32px; font-weight:900; color:var(--ink); line-height:1; font-variant-numeric:tabular-nums; }
+  .timer-label { font-size:11px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:.5px; margin-top:4px; }
+  .timerdone { animation:timerFlash .6s ease; }
+  @keyframes timerFlash { 0% { box-shadow:0 0 0 0 rgba(34,197,94,.45); } 100% { box-shadow:0 0 0 16px rgba(34,197,94,0); } }
+  @media (prefers-reduced-motion:reduce) { .timerdone { animation:none; } }
+
+  /* ---- workout log ---- */
+  .exrow { border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:10px; }
+  .exhead { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:9px; }
+  .exname { font-size:14px; font-weight:700; color:var(--ink); }
+  .expb { font-size:11px; font-weight:700; color:#c2410c; margin-top:2px; }
+  .setchips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:9px; }
+  .setchip { display:inline-flex; align-items:center; gap:6px; background:var(--line); border-radius:999px; padding:5px 5px 5px 12px; font-size:12px; font-weight:700; color:var(--ink); }
+  .setchip button { border:none; background:rgba(15,23,42,.08); color:var(--muted); width:18px; height:18px; border-radius:999px; font-size:10px; display:flex; align-items:center; justify-content:center; padding:0; }
+  .setform { display:flex; gap:6px; }
+  .setinput { flex:1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="banner" class="banner info hide"></div>
+
+  <div class="head">
+    <div class="apptitle">🏋️ Gym Coach</div>
+    <a class="backlink" href="index.html">Daily Coach</a>
+  </div>
+
+  <div class="nav">
+    <button class="navbtn" id="prev" aria-label="Previous day">&#10094;</button>
+    <div class="dateblk">
+      <div class="d" id="dateLabel"></div>
+      <button class="jump hide" id="jumpToday">Jump to today</button>
+    </div>
+    <button class="navbtn" id="next" aria-label="Next day">&#10095;</button>
+  </div>
+
+  <div class="cyclehero" id="cycleHero">
+    <div class="top">
+      <div class="lbl">7-day gym cycle</div>
+      <div class="daynum" id="cycleDayNum">Monday</div>
+    </div>
+    <div class="title" id="cycleTitle"></div>
+    <div class="sub" id="cycleSub"></div>
+  </div>
+
+  <div class="card pad" id="cycleStripCard" style="margin-bottom:14px">
+    <div class="stripgrid" id="cycleStrip"></div>
+    <div class="striphint">Follows the calendar week &mdash; Monday through Sunday.</div>
+    <button class="jump" id="cycleEditToggle" style="margin-top:10px">Edit cycle</button>
+  </div>
+
+  <div class="card pad hide" id="cycleEditor" style="margin-bottom:14px">
+    <div id="cycleEditRows"></div>
+    <div class="hint" style="margin:10px 0">Leave a day blank (or type &quot;rest&quot;) and it&#39;s styled as a rest day.</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn dark" id="cycleSave">Save cycle</button>
+      <button class="btn" id="cycleCancel" style="flex:0;padding:10px 18px">Cancel</button>
+    </div>
+  </div>
+
+  <div class="card pad" id="timerCard" style="margin-bottom:14px">
+    <div class="sec" style="margin-bottom:12px">Rest timer</div>
+    <div class="timerwrap">
+      <svg viewBox="0 0 120 120" class="timer-svg">
+        <circle class="timer-track" cx="60" cy="60" r="52" />
+        <circle class="timer-fill" id="timerFill" cx="60" cy="60" r="52" />
+      </svg>
+      <div class="timer-center">
+        <div class="timer-time" id="timerTime">1:00</div>
+        <div class="timer-label" id="timerLabel">Rest timer</div>
+      </div>
+    </div>
+    <div class="chips" id="timerPresets" style="justify-content:center;margin:14px 0 12px"></div>
+    <div class="actions" style="margin:0">
+      <button class="btn primary" id="timerStart">Start</button>
+      <button class="btn" id="timerReset">Reset</button>
+    </div>
+    <button class="jump" id="notifyToggle" style="display:block;margin:12px auto 0;text-align:center"></button>
+  </div>
+
+  <div style="margin-top:20px">
+    <div class="sec">Workout log</div>
+    <div class="card pad" id="logCard">
+      <div class="hint hide" id="logEmpty" style="margin-top:0">No exercises logged for this day yet.</div>
+      <div id="exerciseList"></div>
+      <button class="btn primary" id="addExerciseBtn" style="width:100%">+ Log exercise</button>
+      <div class="hide" id="exerciseForm" style="margin-top:12px">
+        <input class="field" id="exerciseName" placeholder="e.g. Bench press" list="exerciseSuggestions" autocomplete="off" />
+        <datalist id="exerciseSuggestions"></datalist>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn dark" id="exerciseSave">Add</button>
+          <button class="btn" id="exerciseCancel" style="flex:0;padding:10px 18px">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:20px">
+    <div class="sec">Backup</div>
+    <div class="card pad">
+      <div class="actions" style="margin:0">
+        <button class="btn" id="exportBtn">Export backup</button>
+        <button class="btn" id="importBtn">Import backup</button>
+      </div>
+      <input type="file" id="importFile" accept="application/json,.json" class="hide" />
+      <div class="hint">This data lives only on this device and is separate from Daily Coach&#39;s backup.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var KEY = "gym-coach-data";
+  var DOW = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  var MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var WEEKDAY_ABBR = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  var TIMER_PRESETS = [30, 60, 90, 120];
+  var DEFAULT_CYCLE_DAYS = [
+    "Push — chest, shoulders, triceps",
+    "Pull — back, biceps",
+    "Legs — squats, RDLs, leg press, calves",
+    "Rest",
+    "Upper body",
+    "Lower body",
+    "Rest"
+  ];
+
+  function pad(n){ return n < 10 ? "0" + n : "" + n; }
+  function keyOf(d){ return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()); }
+  function todayKey(){ return keyOf(new Date()); }
+  function shiftDate(dk, delta){
+    var p = dk.split("-");
+    var d = new Date(+p[0], +p[1]-1, +p[2]);
+    d.setDate(d.getDate() + delta);
+    return keyOf(d);
+  }
+  function dateOf(dk){ var p = dk.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
+  function pretty(dk){ var d = dateOf(dk); return DOW[d.getDay()] + ", " + MON[d.getMonth()] + " " + d.getDate(); }
+  function slugId(text){
+    var s = String(text).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,24);
+    return "e-" + (s || "ex") + "-" + Math.random().toString(36).slice(2,6);
+  }
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
+  function $(id){ return document.getElementById(id); }
+
+  var data = { cycle: { days: DEFAULT_CYCLE_DAYS.slice() }, logs: {}, unit: "lb" };
+  var viewDate = todayKey();
+  var storageOK = true;
+
+  function load(){
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var p = JSON.parse(raw);
+        data = {
+          cycle: { days: (p.cycle && p.cycle.days) || DEFAULT_CYCLE_DAYS.slice() },
+          logs: p.logs || {},
+          unit: p.unit || "lb"
+        };
+        return true;
+      }
+    } catch (e) { storageOK = false; }
+    return false;
+  }
+  function save(){
+    try { localStorage.setItem(KEY, JSON.stringify(data)); }
+    catch (e) { storageOK = false; banner("Storage is full or blocked. Changes won't survive a reload.", "warn"); }
+  }
+  var bannerTimer = null;
+  function banner(msg, kind){
+    var el = $("banner");
+    el.textContent = msg;
+    el.className = "banner " + (kind || "info");
+    clearTimeout(bannerTimer);
+    if (kind !== "warn") bannerTimer = setTimeout(function(){ el.className = "banner info hide"; }, 3000);
+  }
+
+  function render(){
+    $("dateLabel").textContent = pretty(viewDate);
+    $("jumpToday").className = viewDate === todayKey() ? "jump hide" : "jump";
+    renderGymCycle();
+    renderLog();
+  }
+
+  // ---- gym cycle ----
+  function cycleDayIndex(dk){ return (dateOf(dk).getDay() + 6) % 7; }
+  function splitTitleSub(text){
+    var i = text.indexOf("—");
+    if (i === -1) return { title: text, sub: "" };
+    return { title: text.slice(0, i).trim(), sub: text.slice(i + 1).trim() };
+  }
+  function isRestDay(text){ return !text || /^rest$/i.test(text.trim()); }
+
+  function renderGymCycle(){
+    var idx = cycleDayIndex(viewDate);
+    var days = data.cycle.days;
+    var raw = days[idx] || "";
+    var rest = isRestDay(raw);
+
+    $("cycleDayNum").textContent = DOW[dateOf(viewDate).getDay()];
+    if (rest) {
+      $("cycleTitle").textContent = "Rest day";
+      $("cycleSub").className = "sub hide";
+    } else {
+      var parts = splitTitleSub(raw);
+      $("cycleTitle").textContent = parts.title;
+      $("cycleSub").textContent = parts.sub;
+      $("cycleSub").className = parts.sub ? "sub" : "sub hide";
+    }
+
+    var html = "";
+    for (var i = 0; i < 7; i++) {
+      var t = days[i] || "";
+      var r = isRestDay(t);
+      var label = r ? "Rest" : splitTitleSub(t).title;
+      html += '<div class="wdchip ' + (r ? "rest" : "gym") + (i === idx ? " today" : "") + '">' +
+        '<div class="cd">' + WEEKDAY_ABBR[i] + '</div><div class="cw">' + esc(label) + '</div></div>';
+    }
+    $("cycleStrip").innerHTML = html;
+  }
+  function openCycleEditor(){
+    var rows = "";
+    for (var i = 0; i < 7; i++) {
+      rows += '<div class="editrow"><div class="dn">' + WEEKDAY_ABBR[i] + '</div>' +
+        '<input class="field" data-idx="' + i + '" value="' + esc(data.cycle.days[i] || "") + '" /></div>';
+    }
+    $("cycleEditRows").innerHTML = rows;
+    $("cycleEditor").className = "card pad";
+  }
+  $("cycleEditToggle").onclick = openCycleEditor;
+  $("cycleCancel").onclick = function(){ $("cycleEditor").className = "card pad hide"; };
+  $("cycleSave").onclick = function(){
+    var inputs = $("cycleEditRows").querySelectorAll("input");
+    var days = data.cycle.days.slice();
+    inputs.forEach(function(inp){ days[+inp.getAttribute("data-idx")] = inp.value.trim(); });
+    data.cycle.days = days;
+    save();
+    $("cycleEditor").className = "card pad hide";
+    render();
+    banner("Gym cycle updated.");
+  };
+
+  // ---- rest timer ----
+  var timerDuration = 60;
+  var timerRemaining = 60;
+  var timerRunning = false;
+  var timerInterval = null;
+  var timerEndAt = null;
+
+  function fmtTime(s){
+    var m = Math.floor(s / 60), sec = s % 60;
+    return m + ":" + (sec < 10 ? "0" : "") + sec;
+  }
+  function paintTimerPresets(){
+    $("timerPresets").innerHTML = TIMER_PRESETS.map(function(s){
+      var on = s === timerDuration;
+      return '<button class="chip" data-s="' + s + '" style="' +
+        (on ? "border-color:var(--accent);color:var(--accent);background:#f9731618" : "") +
+        '">' + s + 's</button>';
+    }).join("");
+  }
+  function renderTimer(){
+    var r = 52, c = 2 * Math.PI * r;
+    var frac = timerDuration > 0 ? timerRemaining / timerDuration : 0;
+    frac = Math.max(0, Math.min(1, frac));
+    var fill = $("timerFill");
+    fill.setAttribute("stroke-dasharray", c);
+    fill.setAttribute("stroke-dashoffset", c * (1 - frac));
+    fill.style.stroke = (timerRunning && timerRemaining > 0 && timerRemaining <= 10) ? "#dc2626" : "";
+    $("timerTime").textContent = fmtTime(timerRemaining);
+    $("timerLabel").textContent = timerRunning ? "Resting…" :
+      (timerRemaining === 0 ? "Time's up!" : (timerRemaining < timerDuration ? "Paused" : "Rest timer"));
+    $("timerStart").textContent = timerRunning ? "Pause" :
+      (timerRemaining > 0 && timerRemaining < timerDuration ? "Resume" : "Start");
+  }
+  function playRestBeep(){
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      var ctx = new Ctx();
+      [880, 1046].forEach(function(freq, i){
+        setTimeout(function(){
+          var o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = "sine"; o.frequency.value = freq;
+          g.gain.setValueAtTime(0.0001, ctx.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.45);
+          o.connect(g); g.connect(ctx.destination);
+          o.start(); o.stop(ctx.currentTime + 0.46);
+        }, i * 260);
+      });
+    } catch (e) {}
+  }
+  function stopTimerInterval(){
+    timerRunning = false;
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  function renderNotifyToggle(){
+    var btn = $("notifyToggle");
+    if (!("Notification" in window)) { btn.className = "hide"; return; }
+    btn.className = "jump";
+    if (Notification.permission === "granted") btn.textContent = "🔔 Notifications on";
+    else if (Notification.permission === "denied") btn.textContent = "🔕 Notifications blocked — check browser settings";
+    else btn.textContent = "🔔 Enable notifications";
+  }
+  function fireRestNotification(){
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    var title = "⏱️ Rest over — let's go!";
+    var opts = { body: "Time for your next set.", icon: "gym-icon-192.png", badge: "gym-icon-192.png", tag: "gym-coach-rest" };
+    try {
+      if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+        navigator.serviceWorker.ready.then(function(reg){
+          if (reg && reg.showNotification) reg.showNotification(title, opts);
+          else new Notification(title, opts);
+        }).catch(function(){ try { new Notification(title, opts); } catch (e) {} });
+      } else {
+        new Notification(title, opts);
+      }
+    } catch (e) {}
+  }
+  function completeTimer(){
+    timerRemaining = 0;
+    stopTimerInterval();
+    timerEndAt = null;
+    playRestBeep();
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    banner("⏱️ Rest over — let's go!");
+    fireRestNotification();
+    var card = $("timerCard");
+    card.className = "card pad timerdone";
+    setTimeout(function(){ card.className = "card pad"; }, 650);
+    renderTimer();
+  }
+  function tickTimer(){
+    if (!timerRunning || !timerEndAt) return;
+    var remaining = Math.max(0, Math.ceil((timerEndAt - Date.now()) / 1000));
+    timerRemaining = remaining;
+    if (remaining <= 0) { completeTimer(); return; }
+    renderTimer();
+  }
+  function startPauseTimer(){
+    if (timerRunning) { stopTimerInterval(); renderTimer(); return; }
+    if (timerRemaining <= 0) timerRemaining = timerDuration;
+    timerRunning = true;
+    timerEndAt = Date.now() + timerRemaining * 1000;
+    timerInterval = setInterval(tickTimer, 1000);
+    renderTimer();
+  }
+  function resetTimer(){
+    stopTimerInterval();
+    timerRemaining = timerDuration;
+    timerEndAt = null;
+    renderTimer();
+  }
+  $("timerPresets").onclick = function(e){
+    var b = e.target.closest("[data-s]"); if (!b) return;
+    stopTimerInterval();
+    timerDuration = +b.getAttribute("data-s");
+    timerRemaining = timerDuration;
+    timerEndAt = null;
+    paintTimerPresets();
+    renderTimer();
+  };
+  $("timerStart").onclick = startPauseTimer;
+  $("timerReset").onclick = resetTimer;
+  $("notifyToggle").onclick = function(){
+    if (!("Notification" in window) || Notification.permission !== "default") return;
+    Notification.requestPermission().then(renderNotifyToggle);
+  };
+
+  // ---- workout log ----
+  function ensureLog(dk){ if (!data.logs[dk]) data.logs[dk] = []; return data.logs[dk]; }
+  function allExerciseNames(){
+    var seen = {}, out = [];
+    Object.keys(data.logs).forEach(function(dk){
+      data.logs[dk].forEach(function(ex){
+        var key = ex.name.trim().toLowerCase();
+        if (!seen[key]) { seen[key] = true; out.push(ex.name); }
+      });
+    });
+    return out.sort();
+  }
+  function personalBest(name){
+    var key = name.trim().toLowerCase();
+    var best = null;
+    Object.keys(data.logs).forEach(function(dk){
+      data.logs[dk].forEach(function(ex){
+        if (ex.name.trim().toLowerCase() !== key) return;
+        ex.sets.forEach(function(s){
+          if (!best || s.weight > best.weight || (s.weight === best.weight && s.reps > best.reps)) {
+            best = { weight: s.weight, reps: s.reps };
+          }
+        });
+      });
+    });
+    return best;
+  }
+  function renderExerciseRow(ex){
+    var pb = personalBest(ex.name);
+    var pbText = pb ? ("PB " + pb.weight + data.unit + " × " + pb.reps) : "";
+    var chips = ex.sets.map(function(s, i){
+      return '<span class="setchip">' + s.reps + ' × ' + s.weight + data.unit +
+        ' <button data-act="delset" data-idx="' + i + '" aria-label="Remove set">&#10005;</button></span>';
+    }).join("");
+    return '<div class="exrow" data-id="' + ex.id + '">' +
+      '<div class="exhead"><div><div class="exname">' + esc(ex.name) + '</div>' +
+      (pbText ? '<div class="expb">' + esc(pbText) + '</div>' : '') + '</div>' +
+      '<button class="iconbtn" data-act="delex" aria-label="Delete exercise">&#128465;</button></div>' +
+      '<div class="setchips">' + chips + '</div>' +
+      '<div class="setform">' +
+        '<input type="number" class="field setinput" placeholder="Reps" data-f="reps" inputmode="numeric" />' +
+        '<input type="number" class="field setinput" placeholder="' + esc(data.unit) + '" data-f="weight" inputmode="decimal" />' +
+        '<button class="btn" data-act="addset">+ Set</button>' +
+      '</div>' +
+    '</div>';
+  }
+  function renderLog(){
+    var log = data.logs[viewDate] || [];
+    $("logEmpty").className = log.length ? "hint hide" : "hint";
+    $("exerciseList").innerHTML = log.map(renderExerciseRow).join("");
+    $("exerciseSuggestions").innerHTML = allExerciseNames().map(function(n){
+      return '<option value="' + esc(n) + '"></option>';
+    }).join("");
+  }
+  $("exerciseList").onclick = function(e){
+    var row = e.target.closest(".exrow"); if (!row) return;
+    var id = row.getAttribute("data-id");
+    var log = ensureLog(viewDate);
+    var ex = log.filter(function(x){ return x.id === id; })[0];
+    if (!ex) return;
+    var act = e.target.closest("[data-act]");
+    if (!act) return;
+    var kind = act.getAttribute("data-act");
+    if (kind === "delex") {
+      data.logs[viewDate] = log.filter(function(x){ return x.id !== id; });
+      save(); renderLog(); return;
+    }
+    if (kind === "delset") {
+      var idx = +act.getAttribute("data-idx");
+      ex.sets.splice(idx, 1);
+      save(); renderLog(); return;
+    }
+    if (kind === "addset") {
+      var reps = +row.querySelector('[data-f="reps"]').value;
+      var weight = +row.querySelector('[data-f="weight"]').value;
+      if (!reps || !weight) { banner("Enter reps and weight.", "warn"); return; }
+      ex.sets.push({ reps: reps, weight: weight });
+      save(); renderLog();
+      banner("Set logged.");
+    }
+  };
+  $("addExerciseBtn").onclick = function(){
+    $("exerciseForm").className = "";
+    $("exerciseName").value = "";
+    $("exerciseName").focus();
+  };
+  $("exerciseCancel").onclick = function(){ $("exerciseForm").className = "hide"; };
+  $("exerciseSave").onclick = function(){
+    var name = $("exerciseName").value.trim();
+    if (!name) return;
+    ensureLog(viewDate).push({ id: slugId(name), name: name, sets: [] });
+    save();
+    $("exerciseForm").className = "hide";
+    renderLog();
+  };
+  $("exerciseName").addEventListener("keydown", function(e){ if (e.key === "Enter") $("exerciseSave").click(); });
+
+  // ---- nav ----
+  $("prev").onclick = function(){ viewDate = shiftDate(viewDate, -1); render(); };
+  $("next").onclick = function(){ viewDate = shiftDate(viewDate, 1); render(); };
+  $("jumpToday").onclick = function(){ viewDate = todayKey(); render(); };
+
+  // ---- backup ----
+  $("exportBtn").onclick = function(){
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "gym-coach-backup-" + todayKey() + ".json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  };
+  $("importBtn").onclick = function(){ $("importFile").click(); };
+  $("importFile").onchange = function(e){
+    var f = e.target.files[0]; if (!f) return;
+    var r = new FileReader();
+    r.onload = function(){
+      try {
+        var p = JSON.parse(r.result);
+        if (!p || typeof p !== "object" || !p.logs) throw new Error("bad file");
+        data = {
+          cycle: { days: (p.cycle && p.cycle.days) || DEFAULT_CYCLE_DAYS.slice() },
+          logs: p.logs || {},
+          unit: p.unit || "lb"
+        };
+        save(); render();
+        banner("Backup restored.");
+      } catch (err) {
+        banner("That file isn't a Gym Coach backup.", "warn");
+      }
+      e.target.value = "";
+    };
+    r.readAsText(f);
+  };
+
+  // ---- boot ----
+  load();
+  if (!storageOK) banner("This browser is blocking local storage, so nothing will save. Turn off Private Browsing.", "warn");
+  paintTimerPresets();
+  renderTimer();
+  renderNotifyToggle();
+  render();
+  document.addEventListener("visibilitychange", function(){
+    if (!document.hidden) { render(); tickTimer(); }
+  });
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js").catch(function(){});
+    });
+  }
+})();
+</script>
+</body>
+</html>
